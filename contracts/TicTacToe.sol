@@ -68,7 +68,7 @@ contract TicTacToe {
     // It returns `success = true` when joining the game was possible and
     // `false` otherwise.
     // `reason` indicates why a game was joined or not joined.
-    function joinGame(uint256 _gameId) public payable returns (bool success, string memory reason) {
+    function joinGame(uint256 _gameId, uint8 choice) public payable returns (bool success, string memory reason) {
         Game storage game = games[_gameId];
         address player = msg.sender;
         // emit PlayerJoinedGame(_gameId, player, uint8(Players.PlayerOne));
@@ -80,11 +80,16 @@ contract TicTacToe {
         balance += msg.value;
         emit SentMoney(game.threshold); 
 
+        require(choice == 0 || choice == 1);
+
         // Assign the new player to slot 1 if it is still available.
         if (game.playerOne == address(0)) {
             game.playerOne = player;
             emit PlayerJoinedGame(_gameId, player, uint8(Players.PlayerOne));
 
+            if (choice == 0){
+                game.playerTwo = address(this);
+            }
             return (true, "Joined as player one.");
         }
 
@@ -151,8 +156,30 @@ contract TicTacToe {
         // A move was made and there is no winner yet.
         // The next player should make her move.
         nextPlayer(game);
-
+        if (getCurrentPlayer(game) == address(this)){
+            makeRandomMove(_gameId, game);
+        }
         return (true, "Your turn is over");
+    }
+
+    function genRandomNumber() private pure returns (uint256 number){
+        uint256 key = 0;
+        uint256 random = uint256(keccak256(abi.encode(key))) % 10;
+        key += 1;
+        return random;
+    }
+    function makeRandomMove(uint256 _gameId, Game storage game) private{
+        uint256 random = genRandomNumber();
+        uint256 x_coordinate = random%3;
+        uint256 y_coordinate = random/3;
+
+        while (game.board[x_coordinate][y_coordinate] != Players.None){ 
+            random = genRandomNumber();
+            x_coordinate = random%3;
+            y_coordinate = random/3;
+        }    
+        game.board[x_coordinate][y_coordinate] = game.playerTurn;
+        emit PlayerMadeMove(_gameId, address(this), x_coordinate, y_coordinate);
     }
 
     // getCurrentPlayer returns the address of the player that should make the next move.
