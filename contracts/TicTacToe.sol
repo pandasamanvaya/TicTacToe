@@ -26,6 +26,8 @@ contract TicTacToe {
         Players playerTurn;
         Players[3][3] board;
         uint256 threshold;
+        uint256 gameTime;
+        uint256 duration;
     }
 
     // games stores all the games.
@@ -36,7 +38,6 @@ contract TicTacToe {
     // nrOfGames stores the total number of games in this contract.
     uint256 private nrOfGames;
     uint256 private balance;
-
     // GameCreated signals that `creator` created a new game with this `gameId`.
     event GameCreated(uint256 gameId, address creator);
     // PlayerJoinedGame signals that `player` joined the game with the id `gameId`.
@@ -49,13 +50,15 @@ contract TicTacToe {
     // The winner is indicated by `winner`. No more moves are allowed in this game.
     event GameOver(uint256 gameId, Winners winner);
     event SentMoney(uint256 money);
-
+    event TimedOut(uint256 duration, address player);
     // newGame creates a new game and returns the new game's `gameId`.
     // The `gameId` is required in subsequent calls to identify the game.
     function newGame() public returns (uint256 gameId) {
         Game memory game;
         game.playerTurn = Players.PlayerOne;
         game.threshold = 200;
+        game.gameTime = 0;
+        game.duration = 20;
 
         nrOfGames++;
         games[nrOfGames] = game;
@@ -119,7 +122,11 @@ contract TicTacToe {
         if (game.winner != Winners.None) {
             return (false, "The game has already ended.");
         }
-
+        if (now - game.gameTime > game.duration){
+            emit TimedOut(game.duration, getCurrentPlayer());
+            return(false, "Timed out");
+        }
+        game.gameTime = now;
         // Only the player whose turn it is may make a move.
         if (msg.sender != getCurrentPlayer(game)) {
             // TODO: what if the player is not present in the game at all?
@@ -170,6 +177,7 @@ contract TicTacToe {
         key += 1;
         return random;
     }
+
     function makeRandomMove(uint256 _gameId, Game storage game) private{
         uint256 random = genRandomNumber();
         uint256 x_coordinate = random%3;
@@ -310,7 +318,4 @@ contract TicTacToe {
 }
 
 //TimeOut
-//SendMoney
-//RecieveMoney
-//CheckThreshold
-//RandomPlayer
+//Multiple games
