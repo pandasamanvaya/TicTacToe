@@ -57,8 +57,8 @@ contract TicTacToe {
         Game memory game;
         game.playerTurn = Players.PlayerOne;
         game.threshold = 200;
-        game.gameTime = 0;
-        game.duration = 20;
+        game.gameTime = now;
+        game.duration = 2;
 
         nrOfGames++;
         games[nrOfGames] = game;
@@ -123,7 +123,7 @@ contract TicTacToe {
             return (false, "The game has already ended.");
         }
         if (now - game.gameTime > game.duration){
-            emit TimedOut(game.duration, getCurrentPlayer(game));
+            emit TimedOut(now - game.gameTime, getCurrentPlayer(game));
             return(false, "Timed out");
         }
         game.gameTime = now;
