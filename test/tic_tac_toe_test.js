@@ -21,9 +21,29 @@ contract('TicTacToe', function(accounts) {
         });
     });
 
-    it("should join game with sufficient funds", () => {
+    it("should join a game with sufficient funds", () => {
         var tic_tac_toe;
         var price = 200;
+        var choice = 1;
+        var game_id;
+
+        return TicTacToe.deployed().then((instance) => {
+            tic_tac_toe = instance;
+            return tic_tac_toe.newGame();
+        }).then((result) => {
+            eventArgs = getEventArgs(result, GAME_CREATED_EVENT);
+            game_id = eventArgs.gameId;
+            return tic_tac_toe.joinGame(game_id, choice, {from: accounts[0], value: price});
+        }).then((result) => {
+            eventArgs = getEventArgs(result, GAME_MONEY);
+            assert.isTrue(eventArgs !== false, "Player joined game with insufficient funds");
+        });
+    });
+
+    it("should allow to join a game with random player", () => {
+        var tic_tac_toe;
+        var price = 200;
+        var choice = 0;
         var game_id;
 
         return TicTacToe.deployed().then((instance) => {
@@ -33,17 +53,24 @@ contract('TicTacToe', function(accounts) {
             eventArgs = getEventArgs(result, GAME_CREATED_EVENT);
             game_id = eventArgs.gameId;
 
-            return tic_tac_toe.joinGame(game_id, {from: accounts[0], value: price});
+            return tic_tac_toe.joinGame(game_id, choice, {from: accounts[0], value: price});
         }).then((result) => {
-            eventArgs = getEventArgs(result, GAME_MONEY);
-            assert.isTrue(eventArgs !== false, "Player joined game with insufficient funds");
+            eventArgs = getEventArgs(result, PLAYER_JOINED_EVENT);
+            assert.isTrue(eventArgs !== false, "Wrong choice entered- 0:Player vs Random, 1:Player vs Player");
+
+            return tic_tac_toe.joinGame(game_id, choice, {from: accounts[1], value: price});
+        }).then((result) => {
+            eventArgs = getEventArgs(result, PLAYER_JOINED_EVENT);
+            assert.isTrue(eventArgs === false, "Random agent didn't join the game");
         });
     });
 
+
     it("should accept exactly two players", () => {
         var tic_tac_toe;
-        var game_id;
         var price = 200;
+        var choice = 1;
+        var game_id;
 
         return TicTacToe.deployed().then((instance) => {
     	    tic_tac_toe = instance;
@@ -53,21 +80,21 @@ contract('TicTacToe', function(accounts) {
         	eventArgs = getEventArgs(result, GAME_CREATED_EVENT);
         	game_id = eventArgs.gameId;
 
-        	return tic_tac_toe.joinGame(game_id, {from: accounts[0], value: price});
+        	return tic_tac_toe.joinGame(game_id, choice, {from: accounts[0], value: price});
         }).then((result) => {
         	eventArgs = getEventArgs(result, PLAYER_JOINED_EVENT);
         	assert.isTrue(eventArgs !== false, "Player one did not join the game.");
         	assert.equal(accounts[0], eventArgs.player.valueOf(), "The wrong player joined the game.");
         	assert.equal(0, (game_id.valueOf()-eventArgs.gameId.valueOf()), "Player one joined the wrong game.");
 
-        	return tic_tac_toe.joinGame(game_id, {from: accounts[1], value: price});
+        	return tic_tac_toe.joinGame(game_id, choice, {from: accounts[1], value: price});
         }).then((result) => {
         	eventArgs = getEventArgs(result, PLAYER_JOINED_EVENT);
         	assert.isTrue(eventArgs !== false, "Player two did not join the game.");
         	assert.equal(accounts[1], eventArgs.player, "The wrong player joined the game.");
         	assert.equal(0, (game_id.valueOf()-eventArgs.gameId.valueOf()), "Player two joined the wrong game.");
 
-        	return tic_tac_toe.joinGame(game_id, {from: accounts[2], value: price});
+        	return tic_tac_toe.joinGame(game_id, choice, {from: accounts[2], value: price});
         }).then((result) => {
         	// assert that there is no event of a player that joined
         	eventArgs = getEventArgs(result, PLAYER_JOINED_EVENT);
@@ -78,6 +105,7 @@ contract('TicTacToe', function(accounts) {
     it("should let the players make moves", () => {
         var tic_tac_toe;
         var price = 200;
+        var choice = 1;
         var game_id;
         return TicTacToe.deployed().then((instance) => {
     	    tic_tac_toe = instance;
@@ -87,9 +115,9 @@ contract('TicTacToe', function(accounts) {
         	eventArgs = getEventArgs(result, GAME_CREATED_EVENT);
         	game_id = eventArgs.gameId;
 
-        	return tic_tac_toe.joinGame(game_id, {from: accounts[0], value: price});
+        	return tic_tac_toe.joinGame(game_id, choice, {from: accounts[0], value: price});
         }).then((result) => {
-        	return tic_tac_toe.joinGame(game_id, {from: accounts[1], value: price});
+        	return tic_tac_toe.joinGame(game_id, choice, {from: accounts[1], value: price});
         }).then((result) => {
         	return tic_tac_toe.makeMove(game_id, 0, 0, {from: accounts[0]});
         }).then((result) => {
@@ -140,6 +168,7 @@ contract('TicTacToe', function(accounts) {
     it("should not let the same player make two moves in a row", () => {
         var tic_tac_toe;
         var price = 200;
+        var choice = 1;
         var game_id;
         return TicTacToe.deployed().then((instance) => {
     	    tic_tac_toe = instance;
@@ -149,9 +178,9 @@ contract('TicTacToe', function(accounts) {
         	eventArgs = getEventArgs(result, GAME_CREATED_EVENT);
         	game_id = eventArgs.gameId;
 
-        	return tic_tac_toe.joinGame(game_id, {from: accounts[0], value: price});
+        	return tic_tac_toe.joinGame(game_id, choice, {from: accounts[0], value: price});
         }).then((result) => {
-        	return tic_tac_toe.joinGame(game_id, {from: accounts[1], value: price});
+        	return tic_tac_toe.joinGame(game_id, choice, {from: accounts[1], value: price});
         }).then((result) => {
         	return tic_tac_toe.makeMove(game_id, 0, 0, {from: accounts[0]});
         }).then((result) => {
@@ -168,6 +197,7 @@ contract('TicTacToe', function(accounts) {
     it("should not let a player make a move at already filled coordinates", () => {
         var tic_tac_toe;
         var price = 200;
+        var choice = 1;
         var game_id;
         return TicTacToe.deployed().then((instance) => {
     	    tic_tac_toe = instance;
@@ -177,9 +207,9 @@ contract('TicTacToe', function(accounts) {
         	eventArgs = getEventArgs(result, GAME_CREATED_EVENT);
         	game_id = eventArgs.gameId;
 
-        	return tic_tac_toe.joinGame(game_id, {from: accounts[0], value: price});
+        	return tic_tac_toe.joinGame(game_id, choice, {from: accounts[0], value: price});
         }).then((result) => {
-        	return tic_tac_toe.joinGame(game_id, {from: accounts[1], value: price});
+        	return tic_tac_toe.joinGame(game_id, choice, {from: accounts[1], value: price});
         }).then((result) => {
         	return tic_tac_toe.makeMove(game_id, 0, 0, {from: accounts[0]});
         }).then((result) => {
