@@ -89,6 +89,8 @@ contract TicTacToe {
 
             if (choice == 0){
                 game.playerTwo = address(this);
+                emit PlayerJoinedGame(_gameId, address(this), uint8(Players.PlayerTwo));
+                return (true, "Joined as player one to play with random agent." );
             }
             return (true, "Joined as player one.");
         }
