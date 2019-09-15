@@ -123,7 +123,7 @@ contract TicTacToe {
             return (false, "The game has already ended.");
         }
         if (now - game.gameTime > game.duration){
-            emit TimedOut(game.duration, getCurrentPlayer());
+            emit TimedOut(game.duration, getCurrentPlayer(game));
             return(false, "Timed out");
         }
         game.gameTime = now;
