@@ -6,6 +6,7 @@ const PLAYER_MADE_MOVE_EVENT = "PlayerMadeMove";
 const GAME_OVER_EVENT = "GameOver";
 const GAME_MONEY = "SentMoney";
 const GAME_TIMED_OUT = "TimedOut"
+
 function wait(time){
    var start = new Date().getTime();
    var end = start;
@@ -62,17 +63,17 @@ contract('TicTacToe', function(accounts) {
             game_id = eventArgs.gameId;
 
             return tic_tac_toe.joinGame(game_id, choice, {from: accounts[0], value: price});
-        }).then((result) => {
+        }).then(async (result) => {
             eventArgs = getEventArgs(result, PLAYER_JOINED_EVENT);
             assert.isTrue(eventArgs !== false, "Wrong choice entered- 0:Player vs Random, 1:Player vs Player");
-
-            return tic_tac_toe.joinGame(game_id, choice, {from: accounts[1], value: price});
-        }).then((result) => {
-            eventArgs = getEventArgs(result, PLAYER_JOINED_EVENT);
-            assert.isTrue(eventArgs === false, "Random agent didn't join the game");
-        });
+            try{
+                await tic_tac_toe.joinGame(game_id, choice, {from: accounts[1], value: price});
+            }
+            catch(err){
+                assert.include(err.message, "revert");
+            }
+           });
     });
-
 
     it("should accept exactly two players", () => {
         var tic_tac_toe;
@@ -96,17 +97,18 @@ contract('TicTacToe', function(accounts) {
         	assert.equal(0, (game_id.valueOf()-eventArgs.gameId.valueOf()), "Player one joined the wrong game.");
 
         	return tic_tac_toe.joinGame(game_id, choice, {from: accounts[1], value: price});
-        }).then((result) => {
+        }).then( async(result) => {
         	eventArgs = getEventArgs(result, PLAYER_JOINED_EVENT);
         	assert.isTrue(eventArgs !== false, "Player two did not join the game.");
         	assert.equal(accounts[1], eventArgs.player, "The wrong player joined the game.");
         	assert.equal(0, (game_id.valueOf()-eventArgs.gameId.valueOf()), "Player two joined the wrong game.");
 
-        	return tic_tac_toe.joinGame(game_id, choice, {from: accounts[2], value: price});
-        }).then((result) => {
-        	// assert that there is no event of a player that joined
-        	eventArgs = getEventArgs(result, PLAYER_JOINED_EVENT);
-        	assert.isTrue(eventArgs === false);
+            try{
+            	await tic_tac_toe.joinGame(game_id, choice, {from: accounts[2], value: price});
+            }
+            catch(err){
+                assert.include(err.message, "revert");
+            }
         });
     });
 
@@ -220,12 +222,13 @@ contract('TicTacToe', function(accounts) {
         	return tic_tac_toe.makeMove(game_id, 0, 0, {from: accounts[0]});
         }).then((result) => {
         	return tic_tac_toe.makeMove(game_id, 0, 1, {from: accounts[1]});
-        }).then((result) => {
-        	return tic_tac_toe.makeMove(game_id, 0, 2, {from: accounts[1]});
-        }).then((result) => {
-        	// assert that there is no event of a player that made a move
-        	eventArgs = getEventArgs(result, PLAYER_MADE_MOVE_EVENT);
-        	assert.isTrue(eventArgs === false);
+        }).then(async(result) => {
+            try{
+        	   await tic_tac_toe.makeMove(game_id, 0, 2, {from: accounts[1]});
+            }
+            catch(err){
+                assert.include(err.message, "revert");
+            }
         });
     });
 
@@ -249,12 +252,13 @@ contract('TicTacToe', function(accounts) {
         	return tic_tac_toe.makeMove(game_id, 0, 0, {from: accounts[0]});
         }).then((result) => {
         	return tic_tac_toe.makeMove(game_id, 0, 1, {from: accounts[1]});
-        }).then((result) => {
-        	return tic_tac_toe.makeMove(game_id, 0, 1, {from: accounts[0]});
-        }).then((result) => {
-        	// assert that there is no event of a player that made a move
-        	eventArgs = getEventArgs(result, PLAYER_MADE_MOVE_EVENT);
-        	assert.isTrue(eventArgs === false);
+        }).then(async(result) => {
+            try{
+        	   await tic_tac_toe.makeMove(game_id, 0, 1, {from: accounts[0]});
+            }
+            catch(err){
+                assert.include(err.message, "revert");
+            }
         });
     });
 });
