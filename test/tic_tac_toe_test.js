@@ -112,68 +112,68 @@ contract('TicTacToe', function(accounts) {
         });
     });
 
-    it("should let the players make moves", () => {
-        var tic_tac_toe;
-        var price = 200;
-        var choice = 1;
-        var game_id;
-        return TicTacToe.deployed().then((instance) => {
-    	    tic_tac_toe = instance;
+    // it("should let the players make moves", () => {
+    //     var tic_tac_toe;
+    //     var price = 200;
+    //     var choice = 1;
+    //     var game_id;
+    //     return TicTacToe.deployed().then((instance) => {
+    // 	    tic_tac_toe = instance;
     	    
-    	    return tic_tac_toe.newGame();
-        }).then((result) => {
-        	eventArgs = getEventArgs(result, GAME_CREATED_EVENT);
-        	game_id = eventArgs.gameId;
+    // 	    return tic_tac_toe.newGame();
+    //     }).then((result) => {
+    //     	eventArgs = getEventArgs(result, GAME_CREATED_EVENT);
+    //     	game_id = eventArgs.gameId;
 
-        	return tic_tac_toe.joinGame(game_id, choice, {from: accounts[0], value: price});
-        }).then((result) => {
-        	return tic_tac_toe.joinGame(game_id, choice, {from: accounts[1], value: price});
-        }).then((result) => {
-        	return tic_tac_toe.makeMove(game_id, 0, 0, {from: accounts[0]});
-        }).then((result) => {
-        	eventArgs = getEventArgs(result, PLAYER_MADE_MOVE_EVENT);
-        	assert.isTrue(eventArgs !== false, "Player did not make a move.");
-        	assert.equal(accounts[0], eventArgs.player, "The wrong player joined the game.");
-        	assert.equal(0, (game_id.valueOf()-eventArgs.gameId.valueOf()), "Player made move in the wrong game.");
-        	assert.equal(0, eventArgs.xCoordinate.valueOf(), "Player made move in another cell.");
-        	assert.equal(0, eventArgs.yCoordinate.valueOf(), "Player made move in another cell.");
+    //     	return tic_tac_toe.joinGame(game_id, choice, {from: accounts[0], value: price});
+    //     }).then((result) => {
+    //     	return tic_tac_toe.joinGame(game_id, choice, {from: accounts[1], value: price});
+    //     }).then((result) => {
+    //     	return tic_tac_toe.makeMove(game_id, 0, 0, {from: accounts[0]});
+    //     }).then((result) => {
+    //     	eventArgs = getEventArgs(result, PLAYER_MADE_MOVE_EVENT);
+    //     	assert.isTrue(eventArgs !== false, "Player did not make a move.");
+    //     	assert.equal(accounts[0], eventArgs.player, "The wrong player joined the game.");
+    //     	assert.equal(0, (game_id.valueOf()-eventArgs.gameId.valueOf()), "Player made move in the wrong game.");
+    //     	assert.equal(0, eventArgs.xCoordinate.valueOf(), "Player made move in another cell.");
+    //     	assert.equal(0, eventArgs.yCoordinate.valueOf(), "Player made move in another cell.");
 
-        	return tic_tac_toe.makeMove(game_id, 1, 1, {from: accounts[1]});
-        }).then((result) => {
-        	eventArgs = getEventArgs(result, PLAYER_MADE_MOVE_EVENT);
-        	assert.isTrue(eventArgs !== false, "Player did not make a move.");
-        	assert.equal(accounts[1], eventArgs.player, "The wrong player joined the game.");
-        	assert.equal(0, (game_id.valueOf()-eventArgs.gameId.valueOf()), "Player made move in the wrong game.");
-        	assert.equal(1, eventArgs.xCoordinate.valueOf(), "Player made move in another cell.");
-        	assert.equal(1, eventArgs.yCoordinate.valueOf(), "Player made move in another cell.");
+    //     	return tic_tac_toe.makeMove(game_id, 1, 1, {from: accounts[1]});
+    //     }).then((result) => {
+    //     	eventArgs = getEventArgs(result, PLAYER_MADE_MOVE_EVENT);
+    //     	assert.isTrue(eventArgs !== false, "Player did not make a move.");
+    //     	assert.equal(accounts[1], eventArgs.player, "The wrong player joined the game.");
+    //     	assert.equal(0, (game_id.valueOf()-eventArgs.gameId.valueOf()), "Player made move in the wrong game.");
+    //     	assert.equal(1, eventArgs.xCoordinate.valueOf(), "Player made move in another cell.");
+    //     	assert.equal(1, eventArgs.yCoordinate.valueOf(), "Player made move in another cell.");
 
-        	return tic_tac_toe.makeMove(game_id, 0, 1, {from: accounts[0]});
-        }).then((result) => {
-        	eventArgs = getEventArgs(result, PLAYER_MADE_MOVE_EVENT);
-        	assert.isTrue(eventArgs !== false, "Player did not make a move.");
-        	assert.equal(accounts[0], eventArgs.player, "The wrong player joined the game.");
-        	assert.equal(0, (game_id.valueOf()-eventArgs.gameId.valueOf()), "Player made move in the wrong game.");
-        	assert.equal(0, eventArgs.xCoordinate.valueOf(), "Player made move in another cell.");
-        	assert.equal(1, eventArgs.yCoordinate.valueOf(), "Player made move in another cell.");
+    //     	return tic_tac_toe.makeMove(game_id, 0, 1, {from: accounts[0]});
+    //     }).then((result) => {
+    //     	eventArgs = getEventArgs(result, PLAYER_MADE_MOVE_EVENT);
+    //     	assert.isTrue(eventArgs !== false, "Player did not make a move.");
+    //     	assert.equal(accounts[0], eventArgs.player, "The wrong player joined the game.");
+    //     	assert.equal(0, (game_id.valueOf()-eventArgs.gameId.valueOf()), "Player made move in the wrong game.");
+    //     	assert.equal(0, eventArgs.xCoordinate.valueOf(), "Player made move in another cell.");
+    //     	assert.equal(1, eventArgs.yCoordinate.valueOf(), "Player made move in another cell.");
 
-        	return tic_tac_toe.makeMove(game_id, 1, 2, {from: accounts[1]});
-        }).then((result) => {
-        	eventArgs = getEventArgs(result, PLAYER_MADE_MOVE_EVENT);
-        	assert.isTrue(eventArgs !== false, "Player did not make a move.");
-        	assert.equal(accounts[1], eventArgs.player, "The wrong player joined the game.");
-        	assert.equal(0,(game_id.valueOf()-eventArgs.gameId.valueOf()), "Player made move in the wrong game.");
-        	assert.equal(1, eventArgs.xCoordinate.valueOf(), "Player made move in another cell.");
-        	assert.equal(2, eventArgs.yCoordinate.valueOf(), "Player made move in another cell.");
+    //     	return tic_tac_toe.makeMove(game_id, 1, 2, {from: accounts[1]});
+    //     }).then((result) => {
+    //     	eventArgs = getEventArgs(result, PLAYER_MADE_MOVE_EVENT);
+    //     	assert.isTrue(eventArgs !== false, "Player did not make a move.");
+    //     	assert.equal(accounts[1], eventArgs.player, "The wrong player joined the game.");
+    //     	assert.equal(0,(game_id.valueOf()-eventArgs.gameId.valueOf()), "Player made move in the wrong game.");
+    //     	assert.equal(1, eventArgs.xCoordinate.valueOf(), "Player made move in another cell.");
+    //     	assert.equal(2, eventArgs.yCoordinate.valueOf(), "Player made move in another cell.");
 
-        	return tic_tac_toe.makeMove(game_id, 0, 2, {from: accounts[0]});
-        }).then((result) => {
-        	eventArgs = getEventArgs(result, GAME_OVER_EVENT);
-        	assert.isTrue(eventArgs !== false, "Game is not over.");
-        	assert.equal(1, eventArgs.winner, "The wrong player won the game (or draw).");
-            assert.equal(0, (game_id.valueOf()-eventArgs.gameId.valueOf()), "Player won the wrong game.");
-        	assert.notEqual(web3.eth.getBalance(accounts[0]), web3.eth.getBalance(accounts[1]), "Prize Money not recieved.");
-        });
-    });
+    //     	return tic_tac_toe.makeMove(game_id, 0, 2, {from: accounts[0]});
+    //     }).then((result) => {
+    //     	eventArgs = getEventArgs(result, GAME_OVER_EVENT);
+    //     	assert.isTrue(eventArgs !== false, "Game is not over.");
+    //     	assert.equal(1, eventArgs.winner, "The wrong player won the game (or draw).");
+    //         assert.equal(0, (game_id.valueOf()-eventArgs.gameId.valueOf()), "Player won the wrong game.");
+    //     	assert.notEqual(web3.eth.getBalance(accounts[0]), web3.eth.getBalance(accounts[1]), "Prize Money not recieved.");
+    //     });
+    // });
 
     it("should timeout for making late move", () => {
         var tic_tac_toe;
@@ -194,7 +194,7 @@ contract('TicTacToe', function(accounts) {
         }).then((result) => {
             return tic_tac_toe.makeMove(game_id, 0, 0, {from: accounts[0]});
         }).then((result) => {
-            wait(3000);
+            wait(11000);
             return tic_tac_toe.makeMove(game_id, 0, 1, {from: accounts[1]});
         }).then((result) => {
             eventArgs = getEventArgs(result, GAME_TIMED_OUT);
