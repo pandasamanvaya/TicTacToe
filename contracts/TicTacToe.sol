@@ -41,7 +41,7 @@ contract TicTacToe {
         game.threshold = 200;
         game.gameTime = now;
         game.gameNo = 1;
-        game.duration = 1000;
+        game.duration = 10; //10s 
         nrOfGames++;
         games[nrOfGames] = game;
         emit GameCreated(nrOfGames, msg.sender);
