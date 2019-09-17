@@ -20,13 +20,26 @@ contract('TicTacToe', function(accounts) {
         var tic_tac_toe;
         return TicTacToe.deployed().then((instance) => {
     	    tic_tac_toe = instance;
-    	    return tic_tac_toe.newGame();
+    	    return tic_tac_toe.newGame({from:accounts[0]});
         }).then((result) => {
         	eventArgs = getEventArgs(result, GAME_CREATED_EVENT);
         	assert.isTrue(eventArgs !== false);
         	
         	assert.equal(accounts[0], eventArgs.creator, "Game creator was not logged correctly.");
         	assert.notEqual(0, eventArgs.gameId, "The game was not created.");
+        });
+    });
+
+    it("should not create a game", () => {
+        var tic_tac_toe;
+        return TicTacToe.deployed().then(async(instance)=> {
+            tic_tac_toe = instance;
+            try{
+                await tic_tac_toe.newGame({from:accounts[1]});
+            }
+            catch(error){
+                assert.include(error.message,"revert");
+            }
         });
     });
 
@@ -70,15 +83,20 @@ contract('TicTacToe', function(accounts) {
                 assert.include(err.message, "revert");
             }
             return tic_tac_toe.joinGame(game_id, choice, {from: accounts[0], value: price});
-        }).then(async (result) => {
-            //Catch error if all seats are taken
-            try{
-                await tic_tac_toe.joinGame(game_id, choice, {from: accounts[1], value: price});
-            }
-            catch(err){
-                assert.include(err.message, "revert");
-            }
-           });
+        // }).then(async (result) => {
+        //     //Catch error if all seats are taken
+        //     try{
+        //         await tic_tac_toe.joinGame(game_id, choice, {from: accounts[1], value: price});
+        //     }
+        //     catch(err){
+        //         assert.include(err.message, "revert");
+        //     }
+        //    });
+        // }).then((result)=>{
+        //     let game = tic_tac_toe.games[game_id];
+        //     assert.equal(game, tic_tac_toe.address, "Error in joining random player");
+
+        // });
     });
 
     it("should accept exactly two players", () => {
@@ -181,32 +199,32 @@ contract('TicTacToe', function(accounts) {
     //     });
     // });
 
-    it("should timeout for making late move", () => {
-        var tic_tac_toe;
-        var price = 200;
-        var choice = 1;
-        var game_id;
-        return TicTacToe.deployed().then((instance) => {
-            tic_tac_toe = instance;
+    // it("should timeout for making late move", () => {
+    //     var tic_tac_toe;
+    //     var price = 200;
+    //     var choice = 1;
+    //     var game_id;
+    //     return TicTacToe.deployed().then((instance) => {
+    //         tic_tac_toe = instance;
             
-            return tic_tac_toe.newGame();
-        }).then((result) => {
-            eventArgs = getEventArgs(result, GAME_CREATED_EVENT);
-            game_id = eventArgs.gameId;
+    //         return tic_tac_toe.newGame();
+    //     }).then((result) => {
+    //         eventArgs = getEventArgs(result, GAME_CREATED_EVENT);
+    //         game_id = eventArgs.gameId;
 
-            return tic_tac_toe.joinGame(game_id, choice, {from: accounts[0], value: price});
-        }).then((result) => {
-            return tic_tac_toe.joinGame(game_id, choice, {from: accounts[1], value: price});
-        }).then((result) => {
-            return tic_tac_toe.makeMove(game_id, 0, 0, {from: accounts[0]});
-        }).then((result) => {
-            wait(11000);
-            return tic_tac_toe.makeMove(game_id, 0, 1, {from: accounts[1]});
-        }).then((result) => {
-            eventArgs = getEventArgs(result, GAME_TIMED_OUT);
-            assert.isTrue(eventArgs !== false, "Game didn't timeout");
-        });
-    });
+    //         return tic_tac_toe.joinGame(game_id, choice, {from: accounts[0], value: price});
+    //     }).then((result) => {
+    //         return tic_tac_toe.joinGame(game_id, choice, {from: accounts[1], value: price});
+    //     }).then((result) => {
+    //         return tic_tac_toe.makeMove(game_id, 0, 0, {from: accounts[0]});
+    //     }).then((result) => {
+    //         wait(11000);
+    //         return tic_tac_toe.makeMove(game_id, 0, 1, {from: accounts[1]});
+    //     }).then((result) => {
+    //         eventArgs = getEventArgs(result, GAME_TIMED_OUT);
+    //         assert.isTrue(eventArgs !== false, "Game didn't timeout");
+    //     });
+    // });
 
     it("should not let the same player make two moves in a row", () => {
         var tic_tac_toe;
