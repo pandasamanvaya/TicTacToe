@@ -297,6 +297,10 @@ contract TicTacToe {
         return true;
     }
 
+    function getCellVal(uint256 _gameID, uint256 x, uint256 y) public view returns (Players player){
+        return games[_gameID].board[x][y];
+    }
+
     // nextPlayer changes whose turn it is for the given `_game`.
     function nextPlayer(Game storage _game) private {
         if (_game.playerTurn == Players.PlayerOne) {

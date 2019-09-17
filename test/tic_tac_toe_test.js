@@ -4,6 +4,7 @@ const GAME_CREATED_EVENT = "GameCreated";
 const PLAYER_JOINED_EVENT = "PlayerJoinedGame";
 const PLAYER_MADE_MOVE_EVENT = "PlayerMadeMove";
 const GAME_OVER_EVENT = "GameOver";
+const GAME_DONE_EVENT = "gameDone";
 const GAME_MONEY = "SentMoney";
 const GAME_TIMED_OUT = "TimedOut"
 
@@ -120,14 +121,14 @@ contract('TicTacToe', function(accounts) {
         }
     });
 
-    it("should allow to join a game with random player", async () => {
+    it("Random player joining and another player shall not join", async () => {
         var tic_tac_toe;
         var price = 200;
         var choice = 0;
         var game_id;
         var p1 = accounts[1];
        
-        tic_tac_toe = await TicTacToe.deployed();
+        tic_tac_toe = await TicTacToe.new();
         game_id = await tic_tac_toe.newGame.call({from:accounts[0]});
         game_id = game_id[0];
         await tic_tac_toe.newGame({from:accounts[0]});
@@ -145,22 +146,22 @@ contract('TicTacToe', function(accounts) {
         let address = await tic_tac_toe.games.call(game_id);
         address = address.playerTwo;
         assert.equal(tic_tac_toe.address,address,"Invalidly joined random player"); //In game, random player is given the address of the contract
-
+        // Random player is always p2;
         try{
-            await tic_tac_toe.joinGame(game_id,choice,{from:accounts[1],value:price})
+            await tic_tac_toe.joinGame(game_id,choice,{from:accounts[1],value:price}) //checks if another player can join after random player joined.
         }
         catch(error){
             assert.ok(error.message);
         }
     });
 
-    it("should accept exactly two players", async () => {
+    it("should accept exactly two players, should not allow 3rd player", async () => {
         var tic_tac_toe;
         var price = 200;
         var choice = 1;
         var game_id;
 
-        return await TicTacToe.deployed().then(async(instance) => {
+        return await TicTacToe.new().then(async(instance) => {
     	    tic_tac_toe = instance;
     	    
     	    return await tic_tac_toe.newGame();
@@ -180,7 +181,8 @@ contract('TicTacToe', function(accounts) {
         	eventArgs = getEventArgs(result, PLAYER_JOINED_EVENT);
         	assert.isTrue(eventArgs !== false, "Player two did not join the game.");
         	assert.equal(accounts[1], eventArgs.player, "The wrong player joined the game.");
-        	assert.equal(0, (game_id.valueOf()-eventArgs.gameId.valueOf()), "Player two joined the wrong game.");
+            assert.equal(0, (game_id.valueOf()-eventArgs.gameId.valueOf()), "Player two joined the wrong game.");
+            //Random player case is also handled here as random player is always player 2 as seen in test above;
             //Catch error if all seats are taken
             try{
             	await tic_tac_toe.joinGame(game_id, choice, {from: accounts[2], value: price});
@@ -191,75 +193,109 @@ contract('TicTacToe', function(accounts) {
         });
     });
 
-    // it("should let the players make moves", () => {
-    //     var tic_tac_toe;
-    //     var price = 200;
-    //     var choice = 1;
-    //     var game_id;
-    //     return TicTacToe.deployed().then((instance) => {
-    // 	    tic_tac_toe = instance;
+    it("Player makes move, board gets updated and changes turn", async () => {
+        const stake = 300;
+        const choice = 1;
+        var tic_tac_toe = await TicTacToe.new();
+        let game_id = await tic_tac_toe.newGame.call({from:accounts[0]});
+        game_id = game_id[0];
+        await tic_tac_toe.newGame({from:accounts[0]});
+        await tic_tac_toe.joinGame(game_id,choice,{from:accounts[1],value:stake}); //accounts[1] is first player;
+        await tic_tac_toe.joinGame(game_id,choice,{from:accounts[2],value:stake}); //accounts[2] is first player;
+
+        let result = await tic_tac_toe.makeMove(game_id,0,0,{from:accounts[1],value:stake}); // p1 places marker in 0,0;
+        eventArgs = getEventArgs(result, PLAYER_MADE_MOVE_EVENT);
+        assert.isTrue(eventArgs !== false, "Player did not make a move.");
+        assert.equal(accounts[1], eventArgs.player, "The wrong player joined the game.");
+        assert.equal(0, (game_id.valueOf()-eventArgs.gameId.valueOf()), "Player made move in the wrong game.");
+        assert.equal(0, eventArgs.xCoordinate.valueOf(), "Player made move in another cell.");
+        assert.equal(0, eventArgs.yCoordinate.valueOf(), "Player made move in another cell.");
+        let turn = await tic_tac_toe.games.call(game_id);
+        turn = turn.playerTurn;
+        assert.equal(2,turn,"turn not changed");
+        let num = await tic_tac_toe.getCellVal.call(game_id,0,0);
+        assert.equal(1,num,"not marked on board");
+    });
+
+    it("Marks the winning player and resets board ", async () => {
+        var tic_tac_toe;
+        var price = 200;
+        var choice = 1;
+        var game_id;
+        return await TicTacToe.new().then(async(instance) => {
+    	    tic_tac_toe = instance;
     	    
-    // 	    return tic_tac_toe.newGame();
-    //     }).then((result) => {
-    //     	eventArgs = getEventArgs(result, GAME_CREATED_EVENT);
-    //     	game_id = eventArgs.gameId;
+    	    return tic_tac_toe.newGame();
+        }).then(async(result) => {
+        	eventArgs = getEventArgs(result, GAME_CREATED_EVENT);
+        	game_id = eventArgs.gameId;
 
-    //     	return tic_tac_toe.joinGame(game_id, choice, {from: accounts[0], value: price});
-    //     }).then((result) => {
-    //     	return tic_tac_toe.joinGame(game_id, choice, {from: accounts[1], value: price});
-    //     }).then((result) => {
-    //     	return tic_tac_toe.makeMove(game_id, 0, 0, {from: accounts[0]});
-    //     }).then((result) => {
-    //     	eventArgs = getEventArgs(result, PLAYER_MADE_MOVE_EVENT);
-    //     	assert.isTrue(eventArgs !== false, "Player did not make a move.");
-    //     	assert.equal(accounts[0], eventArgs.player, "The wrong player joined the game.");
-    //     	assert.equal(0, (game_id.valueOf()-eventArgs.gameId.valueOf()), "Player made move in the wrong game.");
-    //     	assert.equal(0, eventArgs.xCoordinate.valueOf(), "Player made move in another cell.");
-    //     	assert.equal(0, eventArgs.yCoordinate.valueOf(), "Player made move in another cell.");
+        	return await tic_tac_toe.joinGame(game_id, choice, {from: accounts[0], value: price});
+        }).then(async(result) => {
+        	return await tic_tac_toe.joinGame(game_id, choice, {from: accounts[1], value: price});
+        }).then(async(result) => {
+        	return await tic_tac_toe.makeMove(game_id, 0, 0, {from: accounts[0]});
+        }).then(async (result) => {
+        	eventArgs = getEventArgs(result, PLAYER_MADE_MOVE_EVENT);
+        	assert.isTrue(eventArgs !== false, "Player did not make a move.");
+        	assert.equal(accounts[0], eventArgs.player, "The wrong player joined the game.");
+        	assert.equal(0, (game_id.valueOf()-eventArgs.gameId.valueOf()), "Player made move in the wrong game.");
+        	assert.equal(0, eventArgs.xCoordinate.valueOf(), "Player made move in another cell.");
+        	assert.equal(0, eventArgs.yCoordinate.valueOf(), "Player made move in another cell.");
 
-    //     	return tic_tac_toe.makeMove(game_id, 1, 1, {from: accounts[1]});
-    //     }).then((result) => {
-    //     	eventArgs = getEventArgs(result, PLAYER_MADE_MOVE_EVENT);
-    //     	assert.isTrue(eventArgs !== false, "Player did not make a move.");
-    //     	assert.equal(accounts[1], eventArgs.player, "The wrong player joined the game.");
-    //     	assert.equal(0, (game_id.valueOf()-eventArgs.gameId.valueOf()), "Player made move in the wrong game.");
-    //     	assert.equal(1, eventArgs.xCoordinate.valueOf(), "Player made move in another cell.");
-    //     	assert.equal(1, eventArgs.yCoordinate.valueOf(), "Player made move in another cell.");
+        	return await tic_tac_toe.makeMove(game_id, 1, 1, {from: accounts[1]});
+        }).then(async(result) => {
+        	eventArgs = getEventArgs(result, PLAYER_MADE_MOVE_EVENT);
+        	assert.isTrue(eventArgs !== false, "Player did not make a move.");
+        	assert.equal(accounts[1], eventArgs.player, "The wrong player joined the game.");
+        	assert.equal(0, (game_id.valueOf()-eventArgs.gameId.valueOf()), "Player made move in the wrong game.");
+        	assert.equal(1, eventArgs.xCoordinate.valueOf(), "Player made move in another cell.");
+        	assert.equal(1, eventArgs.yCoordinate.valueOf(), "Player made move in another cell.");
 
-    //     	return tic_tac_toe.makeMove(game_id, 0, 1, {from: accounts[0]});
-    //     }).then((result) => {
-    //     	eventArgs = getEventArgs(result, PLAYER_MADE_MOVE_EVENT);
-    //     	assert.isTrue(eventArgs !== false, "Player did not make a move.");
-    //     	assert.equal(accounts[0], eventArgs.player, "The wrong player joined the game.");
-    //     	assert.equal(0, (game_id.valueOf()-eventArgs.gameId.valueOf()), "Player made move in the wrong game.");
-    //     	assert.equal(0, eventArgs.xCoordinate.valueOf(), "Player made move in another cell.");
-    //     	assert.equal(1, eventArgs.yCoordinate.valueOf(), "Player made move in another cell.");
+        	return await tic_tac_toe.makeMove(game_id, 0, 1, {from: accounts[0]});
+        }).then(async(result) => {
+        	eventArgs = getEventArgs(result, PLAYER_MADE_MOVE_EVENT);
+        	assert.isTrue(eventArgs !== false, "Player did not make a move.");
+        	assert.equal(accounts[0], eventArgs.player, "The wrong player joined the game.");
+        	assert.equal(0, (game_id.valueOf()-eventArgs.gameId.valueOf()), "Player made move in the wrong game.");
+        	assert.equal(0, eventArgs.xCoordinate.valueOf(), "Player made move in another cell.");
+        	assert.equal(1, eventArgs.yCoordinate.valueOf(), "Player made move in another cell.");
 
-    //     	return tic_tac_toe.makeMove(game_id, 1, 2, {from: accounts[1]});
-    //     }).then((result) => {
-    //     	eventArgs = getEventArgs(result, PLAYER_MADE_MOVE_EVENT);
-    //     	assert.isTrue(eventArgs !== false, "Player did not make a move.");
-    //     	assert.equal(accounts[1], eventArgs.player, "The wrong player joined the game.");
-    //     	assert.equal(0,(game_id.valueOf()-eventArgs.gameId.valueOf()), "Player made move in the wrong game.");
-    //     	assert.equal(1, eventArgs.xCoordinate.valueOf(), "Player made move in another cell.");
-    //     	assert.equal(2, eventArgs.yCoordinate.valueOf(), "Player made move in another cell.");
+        	return await tic_tac_toe.makeMove(game_id, 1, 2, {from: accounts[1]});
+        }).then(async(result) => {
+        	eventArgs = getEventArgs(result, PLAYER_MADE_MOVE_EVENT);
+        	assert.isTrue(eventArgs !== false, "Player did not make a move.");
+        	assert.equal(accounts[1], eventArgs.player, "The wrong player joined the game.");
+        	assert.equal(0,(game_id.valueOf()-eventArgs.gameId.valueOf()), "Player made move in the wrong game.");
+        	assert.equal(1, eventArgs.xCoordinate.valueOf(), "Player made move in another cell.");
+        	assert.equal(2, eventArgs.yCoordinate.valueOf(), "Player made move in another cell.");
 
-    //     	return tic_tac_toe.makeMove(game_id, 0, 2, {from: accounts[0]});
-    //     }).then((result) => {
-    //     	eventArgs = getEventArgs(result, GAME_OVER_EVENT);
-    //     	assert.isTrue(eventArgs !== false, "Game is not over.");
-    //     	assert.equal(1, eventArgs.winner, "The wrong player won the game (or draw).");
-    //         assert.equal(0, (game_id.valueOf()-eventArgs.gameId.valueOf()), "Player won the wrong game.");
-    //     	assert.notEqual(web3.eth.getBalance(accounts[0]), web3.eth.getBalance(accounts[1]), "Prize Money not recieved.");
-    //     });
-    // });
+        	return await tic_tac_toe.makeMove(game_id, 0, 2, {from: accounts[0]});
+        }).then(async(result) => {
+        	eventArgs = getEventArgs(result, GAME_DONE_EVENT);
+        	assert.isTrue(eventArgs !== false, "Game is not over.");
+            assert.equal(1, eventArgs.winner, "The wrong player won the game (or draw).");
+            let tmp = await tic_tac_toe.games.call(game_id);
+            let win = tmp.playerOneWins;
+            assert.equal(win,1,"Game Winning event has not been recorded");
+            assert.equal(0, (game_id.valueOf()-eventArgs.gameId.valueOf()), "Player won the wrong game.");
+        	// assert.notEqual(web3.eth.getBalance(accounts[0]), web3.eth.getBalance(accounts[1]), "Prize Money not recieved.");
+        }).then(async ()=>{
+            for(let i = 0; i<3;i++){
+                for(j=0;j<3;j++) {
+                    let num = await tic_tac_toe.getCellVal.call(game_id, i,j,{from:accounts[0]});
+                    assert.equal(0,num,"Has not cleared board well");
+                }
+            }
+        });
+    });
 
     it("should timeout for making late move", () => {
         var tic_tac_toe;
         var price = 200;
         var choice = 1;
         var game_id;
-        return TicTacToe.deployed().then((instance) => {
+        return TicTacToe.new().then((instance) => {
             tic_tac_toe = instance;
             
             return tic_tac_toe.newGame();
@@ -310,7 +346,7 @@ contract('TicTacToe', function(accounts) {
         var price = 200;
         var choice = 1;
         var game_id;
-        return TicTacToe.deployed().then(async(instance) => {
+        return TicTacToe.new().then(async(instance) => {
     	    tic_tac_toe = instance;
     	    
     	    return await tic_tac_toe.newGame();
@@ -341,7 +377,7 @@ contract('TicTacToe', function(accounts) {
         var price = 200;
         var choice = 1;
         var game_id;
-        return TicTacToe.deployed().then((instance) => {
+        return TicTacToe.new().then((instance) => {
     	    tic_tac_toe = instance;
     	    
     	    return tic_tac_toe.newGame();
@@ -368,9 +404,7 @@ contract('TicTacToe', function(accounts) {
     });
 });
 
-// getEventArgs returns the event args from the transaction result,
-// filtered by event_name.
-// Returns the boolean `false` if no event with the given name was found.
+
 function getEventArgs(transaction_result, event_name) {
 	for (var i = 0; i < transaction_result.logs.length; i++) {
         var log = transaction_result.logs[i];
