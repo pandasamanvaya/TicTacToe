@@ -89,6 +89,8 @@ contract TicTacToe {
         require(_gameId <= nrOfGames && nrOfGames > 0, "No such game exists");    
         Game storage game = games[_gameId];
         require(game.winner == Winners.None, "The game has already ended");
+        require(game.gameNo <= 4, "Game limit exceeded. Money already transfered to winner");
+
         if (now - game.gameTime > game.duration){
             emit TimedOut(now - game.gameTime, getCurrentPlayer(game));
             address payable player = address(uint256(getCurrentPlayer(game)));
@@ -125,6 +127,7 @@ contract TicTacToe {
                     player = owner;
                     game.winner = Winners.Draw;
                 }
+                emit gameDone(_gameId, game.gameNo, winner);
                 game.gameNo = 5;
                 player.transfer(game.playerOneStake + game.playerTwoStake);
                 
@@ -137,14 +140,14 @@ contract TicTacToe {
                         game.board[i][j] = Players.None;
                     }
                 }
+                emit gameDone(_gameId, game.gameNo, winner);
                 game.gameNo++;
-                if(game.gameNo > 2){
+                if(game.gameNo % 2 == 0){
                     game.playerTurn = Players.PlayerTwo;
                 }
                 else {
                     game.playerTurn = Players.PlayerOne;
                 }
-                emit gameDone(_gameId, game.gameNo, winner);
                 return (true, "Match over, proceeding to next one");
             }
         }
