@@ -61,11 +61,17 @@ contract('TicTacToe', function(accounts) {
         }).then((result) => {
             eventArgs = getEventArgs(result, GAME_CREATED_EVENT);
             game_id = eventArgs.gameId;
-
+        }).then(async(result) => {
+            //Catch invalid choice
+            try{
+                await tic_tac_toe.joinGame(game_id, 3, {from: accounts[0], value: price});
+            }
+            catch(err){
+                assert.include(err.message, "revert");
+            }
             return tic_tac_toe.joinGame(game_id, choice, {from: accounts[0], value: price});
         }).then(async (result) => {
-            eventArgs = getEventArgs(result, PLAYER_JOINED_EVENT);
-            assert.isTrue(eventArgs !== false, "Wrong choice entered- 0:Player vs Random, 1:Player vs Player");
+            //Catch error if all seats are taken
             try{
                 await tic_tac_toe.joinGame(game_id, choice, {from: accounts[1], value: price});
             }
@@ -102,7 +108,7 @@ contract('TicTacToe', function(accounts) {
         	assert.isTrue(eventArgs !== false, "Player two did not join the game.");
         	assert.equal(accounts[1], eventArgs.player, "The wrong player joined the game.");
         	assert.equal(0, (game_id.valueOf()-eventArgs.gameId.valueOf()), "Player two joined the wrong game.");
-
+            //Catch error if all seats are taken
             try{
             	await tic_tac_toe.joinGame(game_id, choice, {from: accounts[2], value: price});
             }
@@ -223,6 +229,7 @@ contract('TicTacToe', function(accounts) {
         }).then((result) => {
         	return tic_tac_toe.makeMove(game_id, 0, 1, {from: accounts[1]});
         }).then(async(result) => {
+            //Catch error if move made in cell previously filled
             try{
         	   await tic_tac_toe.makeMove(game_id, 0, 2, {from: accounts[1]});
             }
@@ -253,6 +260,7 @@ contract('TicTacToe', function(accounts) {
         }).then((result) => {
         	return tic_tac_toe.makeMove(game_id, 0, 1, {from: accounts[1]});
         }).then(async(result) => {
+            //Catch error if 2 moves made consecutively
             try{
         	   await tic_tac_toe.makeMove(game_id, 0, 1, {from: accounts[0]});
             }

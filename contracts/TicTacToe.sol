@@ -58,7 +58,7 @@ contract TicTacToe {
         
         emit SentMoney(game.threshold); 
 
-        require(choice == 0 || choice == 1);
+        require(choice == 0 || choice == 1, "Wrong choice entered- 0:Player vs Random, 1:Player vs Player");
 
         // Assign the new player to slot 1 if it is still available.
         if (game.playerOne == address(0)) {
