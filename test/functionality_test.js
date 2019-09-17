@@ -47,7 +47,7 @@ contract('TicTacToe', function(accounts) {
 
     it("should join a game with sufficient funds",async () => {
         var tic_tac_toe;
-        var price = 200;
+        var price = 200000;
         var choice = 1;
         var game_id;
 
@@ -69,7 +69,7 @@ contract('TicTacToe', function(accounts) {
 
     it("should not be allowed to join with insufficient funds", async()=>{
         var tic_tac_toe = await TicTacToe.new();
-        const stake = 100;
+        const price = 100;
         const choice = 1;
         var game_id;
         game_id = await tic_tac_toe.newGame.call({from: accounts[0]});
@@ -85,12 +85,12 @@ contract('TicTacToe', function(accounts) {
 
     it("should not join with invalid gameID", async()=>{
         var tic_tac_toe = await TicTacToe.new();
-        const stake = 300;
+        const price = 200000;
         const gameID = 2;
         const choice = 1;
         await tic_tac_toe.newGame({from:accounts[0]});
         try {
-            await tic_tac_toe.joinGame(gameID,choice, {from:accounts[0],value: stake});
+            await tic_tac_toe.joinGame(gameID,choice, {from:accounts[0],value: price});
         }
         catch(error){
             assert.include(error.message,"revert");
@@ -99,22 +99,22 @@ contract('TicTacToe', function(accounts) {
 
     it("Existing player shall not join", async()=>{
         var tic_tac_toe = await TicTacToe.new();
-        const stake = 300;
+        const price = 200000;
         var gameID;
         const choice = 1;
         gameID = await tic_tac_toe.newGame.call({from:accounts[0]});
         gameID= gameID[0];
         await tic_tac_toe.newGame({from:accounts[0]});
-        await tic_tac_toe.joinGame(gameID,1, {from:accounts[0],value:stake});
+        await tic_tac_toe.joinGame(gameID,1, {from:accounts[0],value:price});
         try{
-            await tic_tac_toe.joinGame(gameID,1,{from:accounts[0],value:stake});
+            await tic_tac_toe.joinGame(gameID,1,{from:accounts[0],value:price});
         }
         catch(error){
             assert.include(error.message,"You are already in game");
         }
-        await tic_tac_toe.joinGame(gameID,1,{from:accounts[1],value:stake});
+        await tic_tac_toe.joinGame(gameID,1,{from:accounts[1],value:price});
         try{
-            await tic_tac_toe.joinGame(gameID,1,{from:accounts[1],value:stake});
+            await tic_tac_toe.joinGame(gameID,1,{from:accounts[1],value:price});
         }
         catch(error){
             assert.include(error.message,"You are already in game");
@@ -123,7 +123,7 @@ contract('TicTacToe', function(accounts) {
 
     it("Random player joining and another player shall not join", async () => {
         var tic_tac_toe;
-        var price = 200;
+        var price = 200000;
         var choice = 0;
         var game_id;
         var p1 = accounts[1];
@@ -157,7 +157,7 @@ contract('TicTacToe', function(accounts) {
 
     it("should accept exactly two players, should not allow 3rd player", async () => {
         var tic_tac_toe;
-        var price = 200;
+        var price = 200000;
         var choice = 1;
         var game_id;
 
@@ -194,16 +194,16 @@ contract('TicTacToe', function(accounts) {
     });
 
     it("Player makes move, board gets updated and changes turn", async () => {
-        const stake = 300;
+        const price = 200000;
         const choice = 1;
         var tic_tac_toe = await TicTacToe.new();
         let game_id = await tic_tac_toe.newGame.call({from:accounts[0]});
         game_id = game_id[0];
         await tic_tac_toe.newGame({from:accounts[0]});
-        await tic_tac_toe.joinGame(game_id,choice,{from:accounts[1],value:stake}); //accounts[1] is first player;
-        await tic_tac_toe.joinGame(game_id,choice,{from:accounts[2],value:stake}); //accounts[2] is first player;
+        await tic_tac_toe.joinGame(game_id,choice,{from:accounts[1],value:price}); //accounts[1] is first player;
+        await tic_tac_toe.joinGame(game_id,choice,{from:accounts[2],value:price}); //accounts[2] is first player;
 
-        let result = await tic_tac_toe.makeMove(game_id,0,0,{from:accounts[1],value:stake}); // p1 places marker in 0,0;
+        let result = await tic_tac_toe.makeMove(game_id,0,0,{from:accounts[1],value:price}); // p1 places marker in 0,0;
         eventArgs = getEventArgs(result, PLAYER_MADE_MOVE_EVENT);
         assert.isTrue(eventArgs !== false, "Player did not make a move.");
         assert.equal(accounts[1], eventArgs.player, "The wrong player joined the game.");
@@ -219,7 +219,7 @@ contract('TicTacToe', function(accounts) {
 
     it("Marks the winning player and resets board ", async () => {
         var tic_tac_toe;
-        var price = 200;
+        var price = 200000;
         var choice = 1;
         var game_id;
         return await TicTacToe.new().then(async(instance) => {
@@ -292,9 +292,11 @@ contract('TicTacToe', function(accounts) {
 
     it("should timeout for making late move", () => {
         var tic_tac_toe;
-        var price = 200;
+        var price = 200000;
         var choice = 1;
         var game_id;
+        var balance;
+        var diff;
         return TicTacToe.new().then((instance) => {
             tic_tac_toe = instance;
             
@@ -306,21 +308,32 @@ contract('TicTacToe', function(accounts) {
             return tic_tac_toe.joinGame(game_id, choice, {from: accounts[0], value: price});
         }).then((result) => {
             return tic_tac_toe.joinGame(game_id, choice, {from: accounts[1], value: price});
-        }).then((result) => {
-            return tic_tac_toe.makeMove(game_id, 0, 0, {from: accounts[0]});
+        }).then(async(result) => {
+            balance = await web3.eth.getBalance(accounts[0]);
+            let receipt = await tic_tac_toe.makeMove(game_id, 0, 0, {from: accounts[0]});
+            let gas = receipt.receipt.gasUsed;
+            let tx = await web3.eth.getTransaction(receipt.tx);
+            let price = tx.gasPrice;
+            diff = gas*price;
+            return receipt;
         }).then((result) => {
             wait(11000);
-            return tic_tac_toe.makeMove(game_id, 0, 1, {from: accounts[1]});
-        }).then((result) => {
+            return tic_tac_toe.makeMove(game_id, 2, 2, {from: accounts[1]});
+        }).then(async(result) => {
             eventArgs = getEventArgs(result, GAME_TIMED_OUT);
             assert.isTrue(eventArgs !== false, "Game didn't timeout");
+            let new_balance = await web3.eth.getBalance(accounts[0]);
+            let error = (balance+2*price-new_balance-diff)/(new_balance+diff);
+            // console.log(error);
+            // console.log(balance+2*price-new_balance-diff);
+            assert.isAbove(1e-5, error, "Prize Money not recieved.");
         });
     });
 
 
     it("External player should not make a move",async ()=>{
         var tic_tac_toe;
-        var price = 200;
+        var price = 200000;
         var choice = 1;
         var game_id;
 
@@ -343,7 +356,7 @@ contract('TicTacToe', function(accounts) {
 
     it("should not let the same player make two moves in a row", () => {
         var tic_tac_toe;
-        var price = 200;
+        var price = 200000;
         var choice = 1;
         var game_id;
         return TicTacToe.new().then(async(instance) => {
@@ -374,7 +387,7 @@ contract('TicTacToe', function(accounts) {
 
     it("should not let a player make a move at already filled coordinates", () => {
         var tic_tac_toe;
-        var price = 200;
+        var price = 200000;
         var choice = 1;
         var game_id;
         return TicTacToe.new().then((instance) => {

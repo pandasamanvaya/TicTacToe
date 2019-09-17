@@ -38,7 +38,7 @@ contract TicTacToe {
         require(msg.sender == owner, "Only owner can create game!");
         Game memory game;
         game.playerTurn = Players.PlayerOne;
-        game.threshold = 200;
+        game.threshold = 20000;
         game.gameTime = now;
         game.gameNo = 1;
         game.duration = 10; //10s 
@@ -182,8 +182,6 @@ contract TicTacToe {
         emit PlayerMadeMove(_gameId, address(this), x_coordinate, y_coordinate);
     }
 
-    // getCurrentPlayer returns the address of the player that should make the next move.
-    // Returns the `0x0` address if it is no player's turn.
     function getCurrentPlayer(Game storage _game) private view returns (address player) {
         if (_game.playerTurn == Players.PlayerOne) {
             return _game.playerOne;
@@ -196,8 +194,7 @@ contract TicTacToe {
         return address(0);
     }
 
-    // calculateWinner returns the winner on the given board.
-    // The returned winner can be `None` in which case there is no winner and no draw.
+   
     function calculateWinner(Players[3][3] memory _board) private pure returns (Winners winner) {
         // First we check if there is a victory in a row.
         // If so, convert `Players` to `Winners`
@@ -226,9 +223,7 @@ contract TicTacToe {
         return Winners.None;
     }
 
-    // winnerInRow returns the player that wins in any row.
-    // To win in a row, all cells in the row must belong to the same player
-    // and that player must not be the `None` player.
+   
     function winnerInRow(Players[3][3] memory _board) private pure returns (Players winner) {
         for (uint8 x = 0; x < 3; x++) {
             if (
@@ -243,9 +238,7 @@ contract TicTacToe {
         return Players.None;
     }
 
-    // winnerInColumn returns the player that wins in any column.
-    // To win in a column, all cells in the column must belong to the same player
-    // and that player must not be the `None` player.
+    
     function winnerInColumn(Players[3][3] memory _board) private pure returns (Players winner) {
         for (uint8 y = 0; y < 3; y++) {
             if (
@@ -260,9 +253,7 @@ contract TicTacToe {
         return Players.None;
     }
 
-    // winnerInDiagoral returns the player that wins in any diagonal.
-    // To win in a diagonal, all cells in the diaggonal must belong to the same player
-    // and that player must not be the `None` player.
+    
     function winnerInDiagonal(Players[3][3] memory _board) private pure returns (Players winner) {
         if (
             _board[0][0] == _board[1][1]
@@ -283,8 +274,7 @@ contract TicTacToe {
         return Players.None;
     }
 
-    // isBoardFull returns true if all cells of the board belong to a player other
-    // than `None`.
+    
     function isBoardFull(Players[3][3] memory _board) private pure returns (bool isFull) {
         for (uint8 x = 0; x < 3; x++) {
             for (uint8 y = 0; y < 3; y++) {
@@ -301,7 +291,6 @@ contract TicTacToe {
         return games[_gameID].board[x][y];
     }
 
-    // nextPlayer changes whose turn it is for the given `_game`.
     function nextPlayer(Game storage _game) private {
         if (_game.playerTurn == Players.PlayerOne) {
             _game.playerTurn = Players.PlayerTwo;
@@ -315,8 +304,3 @@ contract TicTacToe {
     }
 
 }
-
-
-
-//TimeOut
-//Multiple games

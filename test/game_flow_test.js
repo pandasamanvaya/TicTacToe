@@ -121,7 +121,8 @@ contract('TicTacToe', function(accounts) {
 			assert.isTrue(eventArgs !== false, "Match didn't end");
 			assert.equal(eventArgs.winner, 2, "Match won by wrong winner");
 			let new_balance = await web3.eth.getBalance(accounts[1]);
-			assert.isAbove(diff, balance-new_balance+2*price, "Prize Money not recieved.");
+            let error = (balance+2*price-new_balance-diff)/(new_balance+diff);
+			assert.isAbove(1e-5, error, "Prize Money not recieved.");
 			// console.log(diff);
 			// console.log(balance-new_balance);
 			try{
@@ -254,7 +255,8 @@ contract('TicTacToe', function(accounts) {
 			assert.isTrue(eventArgs !== false, "Match didn't end");
 			assert.equal(eventArgs.winner, 2, "Match won by wrong winner");
 			let new_balance = await web3.eth.getBalance(accounts[1]);
-			assert.isAbove(diff, balance-new_balance, "Wrong winner recieved money");
+            let error = (balance-new_balance-diff)/(new_balance+diff);
+			assert.isAbove(1e-5, error, "Wrong winner recieved money");
 			// console.log(diff);
 			// console.log(balance-new_balance);
 			try{
@@ -383,7 +385,8 @@ contract('TicTacToe', function(accounts) {
 			assert.isTrue(eventArgs !== false, "Match didn't end");
 			assert.equal(eventArgs.winner, 2, "Match won by wrong winner");
 			let new_balance = await web3.eth.getBalance(accounts[2]);
-			assert.isAbove(diff, balance-new_balance+2*price, "Prize money not recieved by player1");
+            let error = (balance+2*price-new_balance-diff)/(new_balance+diff);
+			assert.isAbove(1e-5, error, "Prize money not recieved by player1");
 			// console.log(diff);
 			// console.log(balance-new_balance);
 			try{
