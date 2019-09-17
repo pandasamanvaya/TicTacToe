@@ -34,7 +34,7 @@ contract TicTacToe {
     event SentMoney(uint256 money);
     event gameDone(uint gameId, uint gameNo, Winners winner);
     event TimedOut(uint256 duration, address player);
-    function newGame() public returns (uint256 gameId) {
+    function newGame() public returns (uint256 gameId, address creator) {
         require(msg.sender == owner, "Only owner can create game!");
         Game memory game;
         game.playerTurn = Players.PlayerOne;
@@ -44,8 +44,8 @@ contract TicTacToe {
         game.duration = 10; //10s 
         nrOfGames++;
         games[nrOfGames] = game;
-        emit GameCreated(nrOfGames, msg.sender);
-        return nrOfGames;
+        emit GameCreated(uint256 (nrOfGames), msg.sender);
+        return (nrOfGames, msg.sender);
     }
 
     function joinGame(uint256 _gameId, uint8 choice) public payable returns (bool success, string memory reason) {
@@ -302,7 +302,14 @@ contract TicTacToe {
             _game.playerTurn = Players.PlayerOne;
         }
     }
+
+    function getGameCount() public view returns (uint256){
+        return nrOfGames;
+    }
+
 }
+
+
 
 //TimeOut
 //Multiple games
