@@ -7,7 +7,7 @@ contract('TicTacToe', function(accounts) {
 
 	it("should let 2 players play 4 matches in a row(Winner is player2)", () => {
         var tic_tac_toe;
-        var price = 200;
+        var price = 200000;
         var choice = 1;
         var game_id;
         var balance;
@@ -121,8 +121,9 @@ contract('TicTacToe', function(accounts) {
 			assert.isTrue(eventArgs !== false, "Match didn't end");
 			assert.equal(eventArgs.winner, 2, "Match won by wrong winner");
 			let new_balance = await web3.eth.getBalance(accounts[1]);
-			assert.isAbove(diff, balance-new_balance, "Prize Money not recieved.");
-
+			assert.isAbove(diff, balance-new_balance+2*price, "Prize Money not recieved.");
+			// console.log(diff);
+			// console.log(balance-new_balance);
 			try{
         		await tic_tac_toe.makeMove(game_id, 2, 0, {from: accounts[0]});
 			}
@@ -134,7 +135,7 @@ contract('TicTacToe', function(accounts) {
 
 	it("should let 2 players play 4 matches in a row(Ends in a draw)", () => {
         var tic_tac_toe;
-        var price = 200;
+        var price = 200000;
         var choice = 1;
         var game_id;
         var balance;
@@ -253,7 +254,9 @@ contract('TicTacToe', function(accounts) {
 			assert.isTrue(eventArgs !== false, "Match didn't end");
 			assert.equal(eventArgs.winner, 2, "Match won by wrong winner");
 			let new_balance = await web3.eth.getBalance(accounts[1]);
-			assert.isAbove(diff-2*price, balance-new_balance, "Wrong winner recieved money");
+			assert.isAbove(diff, balance-new_balance, "Wrong winner recieved money");
+			// console.log(diff);
+			// console.log(balance-new_balance);
 			try{
         		await tic_tac_toe.makeMove(game_id, 2, 0, {from: accounts[2]});
 			}
@@ -265,7 +268,7 @@ contract('TicTacToe', function(accounts) {
 
 	it("should let 2 players play 4 matches in a row(Winner is player1)", () => {
         var tic_tac_toe;
-        var price = 200;
+        var price = 200000;
         var choice = 1;
         var game_id;
         var balance;
@@ -277,7 +280,7 @@ contract('TicTacToe', function(accounts) {
         }).then((result) => {
         	eventArgs = getEventArgs(result, GAME_CREATED_EVENT);
         	game_id = eventArgs.gameId;
-        	return tic_tac_toe.joinGame(game_id, choice, {from: accounts[0], value: price});
+        	return tic_tac_toe.joinGame(game_id, choice, {from: accounts[2], value: price});
         }).then((result) => {
         	return tic_tac_toe.joinGame(game_id, choice, {from: accounts[1], value: price});
         }).then((result) => {
@@ -286,19 +289,19 @@ contract('TicTacToe', function(accounts) {
 			//x|o|_
 			//x|x|o
 			//x|_|o
-        	return tic_tac_toe.makeMove(game_id, 1, 1, {from: accounts[0]});
+        	return tic_tac_toe.makeMove(game_id, 1, 1, {from: accounts[2]});
         }).then((result) => {
         	return tic_tac_toe.makeMove(game_id, 0, 1, {from: accounts[1]});
         }).then((result) => {
-        	return tic_tac_toe.makeMove(game_id, 0, 0, {from: accounts[0]});
+        	return tic_tac_toe.makeMove(game_id, 0, 0, {from: accounts[2]});
 		}).then((result) => {
         	return tic_tac_toe.makeMove(game_id, 2, 2, {from: accounts[1]});
 		}).then((result) => {
-        	return tic_tac_toe.makeMove(game_id, 1, 0, {from: accounts[0]});
+        	return tic_tac_toe.makeMove(game_id, 1, 0, {from: accounts[2]});
 		}).then((result) => {
         	return tic_tac_toe.makeMove(game_id, 1, 2, {from: accounts[1]});
 		}).then((result) => {
-        	return tic_tac_toe.makeMove(game_id, 2, 0, {from: accounts[0]});
+        	return tic_tac_toe.makeMove(game_id, 2, 0, {from: accounts[2]});
 		}).then((result) => {
 			eventArgs = getEventArgs(result, GAME_DONE_EVENT);
 			assert.isTrue(eventArgs !== false, "Match didn't end");
@@ -310,19 +313,19 @@ contract('TicTacToe', function(accounts) {
 			//x|o|x
 			return tic_tac_toe.makeMove(game_id, 1, 1, {from : accounts[1]});
 		}).then((result) => {
-        	return tic_tac_toe.makeMove(game_id, 0, 2, {from: accounts[0]});
+        	return tic_tac_toe.makeMove(game_id, 0, 2, {from: accounts[2]});
 		}).then((result) => {
         	return tic_tac_toe.makeMove(game_id, 2, 2, {from: accounts[1]});
 		}).then((result) => {
-        	return tic_tac_toe.makeMove(game_id, 0, 0, {from: accounts[0]});
+        	return tic_tac_toe.makeMove(game_id, 0, 0, {from: accounts[2]});
 		}).then((result) => {
         	return tic_tac_toe.makeMove(game_id, 0, 1, {from: accounts[1]});
 		}).then((result) => {
-        	return tic_tac_toe.makeMove(game_id, 2, 1, {from: accounts[0]});
+        	return tic_tac_toe.makeMove(game_id, 2, 1, {from: accounts[2]});
 		}).then((result) => {
         	return tic_tac_toe.makeMove(game_id, 1, 0, {from: accounts[1]});
 		}).then((result) => {
-        	return tic_tac_toe.makeMove(game_id, 1, 2, {from: accounts[0]});
+        	return tic_tac_toe.makeMove(game_id, 1, 2, {from: accounts[2]});
 		}).then((result) => {
         	return tic_tac_toe.makeMove(game_id, 2, 0, {from: accounts[1]});
 		}).then((result) => {
@@ -334,19 +337,19 @@ contract('TicTacToe', function(accounts) {
 			//x|o|x
 			//x|o|_
 			//x|_|o
-        	return tic_tac_toe.makeMove(game_id, 2, 0, {from: accounts[0]});
+        	return tic_tac_toe.makeMove(game_id, 2, 0, {from: accounts[2]});
 		}).then((result) => {
         	return tic_tac_toe.makeMove(game_id, 1, 1, {from: accounts[1]});
 		}).then((result) => {
-        	return tic_tac_toe.makeMove(game_id, 0, 2, {from: accounts[0]});
+        	return tic_tac_toe.makeMove(game_id, 0, 2, {from: accounts[2]});
 		}).then((result) => {
         	return tic_tac_toe.makeMove(game_id, 2, 2, {from: accounts[1]});
 		}).then((result) => {
-        	return tic_tac_toe.makeMove(game_id, 0, 0, {from: accounts[0]});
+        	return tic_tac_toe.makeMove(game_id, 0, 0, {from: accounts[2]});
 		}).then((result) => {
         	return tic_tac_toe.makeMove(game_id, 0, 1, {from: accounts[1]});
 		}).then((result) => {
-        	return tic_tac_toe.makeMove(game_id, 1, 0, {from: accounts[0]});
+        	return tic_tac_toe.makeMove(game_id, 1, 0, {from: accounts[2]});
 		}).then((result) => {
 			eventArgs = getEventArgs(result, GAME_DONE_EVENT);
 			assert.isTrue(eventArgs !== false, "Match didn't end");
@@ -358,16 +361,16 @@ contract('TicTacToe', function(accounts) {
 			//x|_|o
         	return tic_tac_toe.makeMove(game_id, 2, 0, {from: accounts[1]});
 		}).then((result) => {
-        	return tic_tac_toe.makeMove(game_id, 0, 0, {from: accounts[0]});
+        	return tic_tac_toe.makeMove(game_id, 0, 0, {from: accounts[2]});
 		}).then((result) => {
         	return tic_tac_toe.makeMove(game_id, 2, 2, {from: accounts[1]});
 		}).then((result) => {
-        	return tic_tac_toe.makeMove(game_id, 0, 1, {from: accounts[0]});
+        	return tic_tac_toe.makeMove(game_id, 0, 1, {from: accounts[2]});
 		}).then((result) => {
         	return tic_tac_toe.makeMove(game_id, 0, 2, {from: accounts[1]});
 		}).then(async(result) => {
-			balance = await web3.eth.getBalance(accounts[0]);
-			let receipt = await tic_tac_toe.makeMove(game_id, 2, 1, {from: accounts[0]});
+			balance = await web3.eth.getBalance(accounts[2]);
+			let receipt = await tic_tac_toe.makeMove(game_id, 2, 1, {from: accounts[2]});
 			let gas = receipt.receipt.gasUsed;
 			let tx = await web3.eth.getTransaction(receipt.tx);
 			let price = tx.gasPrice;
@@ -379,10 +382,12 @@ contract('TicTacToe', function(accounts) {
 			eventArgs = getEventArgs(result, GAME_DONE_EVENT);
 			assert.isTrue(eventArgs !== false, "Match didn't end");
 			assert.equal(eventArgs.winner, 2, "Match won by wrong winner");
-			let new_balance = await web3.eth.getBalance(accounts[0]);
-			assert.isAbove(diff, balance-new_balance, "Prize money not recieved by player1");
+			let new_balance = await web3.eth.getBalance(accounts[2]);
+			assert.isAbove(diff, balance-new_balance+2*price, "Prize money not recieved by player1");
+			// console.log(diff);
+			// console.log(balance-new_balance);
 			try{
-        		await tic_tac_toe.makeMove(game_id, 2, 0, {from: accounts[0]});
+        		await tic_tac_toe.makeMove(game_id, 2, 0, {from: accounts[2]});
 			}
 			catch(err){
 				assert.include(err.message, "revert");
