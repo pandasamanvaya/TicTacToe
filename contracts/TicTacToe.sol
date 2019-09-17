@@ -52,7 +52,7 @@ contract TicTacToe {
         require(_gameId <= nrOfGames && nrOfGames > 0, "No such game exists");    
         Game storage game = games[_gameId];
         require (msg.value >= game.threshold, "Insufficient stake");
-        require(msg.sender!=game.playerOne || msg.sender!=game.playerTwo, "You are already in game");
+        require(msg.sender!= address(game.playerOne) && msg.sender!= address(game.playerTwo), "You are already in game");
         require(game.playerOne == address(0) || game.playerTwo == address(0), "All seats taken");
         address player = msg.sender;
         
