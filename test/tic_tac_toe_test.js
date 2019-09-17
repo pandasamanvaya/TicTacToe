@@ -16,23 +16,24 @@ function wait(time){
 }
 
 contract('TicTacToe', function(accounts) {
-	it("should create a game", () => {
+	it("should create a game", async () => {
         var tic_tac_toe;
-        return TicTacToe.deployed().then((instance) => {
-    	    tic_tac_toe = instance;
-    	    return tic_tac_toe.newGame({from:accounts[0]});
-        }).then((result) => {
-        	eventArgs = getEventArgs(result, GAME_CREATED_EVENT);
+        return await TicTacToe.new().then(async (instance) => {
+            
+            tic_tac_toe = instance;
+            return await tic_tac_toe.newGame({from:accounts[0]});
+        }).then(async (result) => {
+        	eventArgs =await getEventArgs(result, GAME_CREATED_EVENT);
         	assert.isTrue(eventArgs !== false);
-        	
+            
         	assert.equal(accounts[0], eventArgs.creator, "Game creator was not logged correctly.");
-        	assert.notEqual(0, eventArgs.gameId, "The game was not created.");
+            assert.notEqual(0, eventArgs.gameId, "The game was not created.");
         });
     });
 
-    it("should not create a game", () => {
+    it("should not create a game",async () => {
         var tic_tac_toe;
-        return TicTacToe.deployed().then(async(instance)=> {
+        return await TicTacToe.new().then(async(instance)=> {
             tic_tac_toe = instance;
             try{
                 await tic_tac_toe.newGame({from:accounts[1]});
@@ -43,77 +44,131 @@ contract('TicTacToe', function(accounts) {
         });
     });
 
-    it("should join a game with sufficient funds", () => {
+    it("should join a game with sufficient funds",async () => {
         var tic_tac_toe;
         var price = 200;
         var choice = 1;
         var game_id;
 
-        return TicTacToe.deployed().then((instance) => {
+        return TicTacToe.new().then(async (instance) => {
             tic_tac_toe = instance;
-            return tic_tac_toe.newGame();
-        }).then((result) => {
+            return await tic_tac_toe.newGame();
+        }).then(async(result) => {
             eventArgs = getEventArgs(result, GAME_CREATED_EVENT);
             game_id = eventArgs.gameId;
-            return tic_tac_toe.joinGame(game_id, choice, {from: accounts[0], value: price});
-        }).then((result) => {
+            return await tic_tac_toe.joinGame(game_id, choice, {from: accounts[0], value: price});
+        }).then(async (result) => {
             eventArgs = getEventArgs(result, GAME_MONEY);
             assert.isTrue(eventArgs !== false, "Player joined game with insufficient funds");
+            let address = await tic_tac_toe.games.call(game_id);
+            address = address.playerOne;
+            assert.equal(address,accounts[0],"Invalid joining"); // checks if player one address is equal to that of sender
         });
     });
 
-    it("should allow to join a game with random player", () => {
+    it("should not be allowed to join with insufficient funds", async()=>{
+        var tic_tac_toe = await TicTacToe.new();
+        const stake = 100;
+        const choice = 1;
+        var game_id;
+        game_id = await tic_tac_toe.newGame.call({from: accounts[0]});
+        game_id = game_id[0];
+        tic_tac_toe.newGame({from:accounts[0]});
+        try{
+            await tic_tac_toe.joinGame(game_id, choice, {from:accounts[0],value:100});
+        }
+        catch(error){
+            assert.include(error.message,"revert");
+        }
+    });
+
+    it("should not join with invalid gameID", async()=>{
+        var tic_tac_toe = await TicTacToe.new();
+        const stake = 300;
+        const gameID = 2;
+        const choice = 1;
+        await tic_tac_toe.newGame({from:accounts[0]});
+        try {
+            await tic_tac_toe.joinGame(gameID,choice, {from:accounts[0],value: stake});
+        }
+        catch(error){
+            assert.include(error.message,"revert");
+        }
+    });
+
+    it("Existing player shall not join", async()=>{
+        var tic_tac_toe = await TicTacToe.new();
+        const stake = 300;
+        var gameID;
+        const choice = 1;
+        gameID = await tic_tac_toe.newGame.call({from:accounts[0]});
+        gameID= gameID[0];
+        await tic_tac_toe.newGame({from:accounts[0]});
+        await tic_tac_toe.joinGame(gameID,1, {from:accounts[0],value:stake});
+        try{
+            await tic_tac_toe.joinGame(gameID,1,{from:accounts[0],value:stake});
+        }
+        catch(error){
+            assert.include(error.message,"You are already in game");
+        }
+        await tic_tac_toe.joinGame(gameID,1,{from:accounts[1],value:stake});
+        try{
+            await tic_tac_toe.joinGame(gameID,1,{from:accounts[1],value:stake});
+        }
+        catch(error){
+            assert.include(error.message,"You are already in game");
+        }
+    });
+
+    it("should allow to join a game with random player", async () => {
         var tic_tac_toe;
         var price = 200;
         var choice = 0;
         var game_id;
+        var p1 = accounts[1];
+       
+        tic_tac_toe = await TicTacToe.deployed();
+        game_id = await tic_tac_toe.newGame.call({from:accounts[0]});
+        game_id = game_id[0];
+        await tic_tac_toe.newGame({from:accounts[0]});
 
-        return TicTacToe.deployed().then((instance) => {
-            tic_tac_toe = instance;
-            return tic_tac_toe.newGame();
-        }).then((result) => {
-            eventArgs = getEventArgs(result, GAME_CREATED_EVENT);
-            game_id = eventArgs.gameId;
-        }).then(async(result) => {
-            //Catch invalid choice
-            try{
-                await tic_tac_toe.joinGame(game_id, 3, {from: accounts[0], value: price});
-            }
-            catch(err){
-                assert.include(err.message, "revert");
-            }
-            return tic_tac_toe.joinGame(game_id, choice, {from: accounts[0], value: price});
-        // }).then(async (result) => {
-        //     //Catch error if all seats are taken
-        //     try{
-        //         await tic_tac_toe.joinGame(game_id, choice, {from: accounts[1], value: price});
-        //     }
-        //     catch(err){
-        //         assert.include(err.message, "revert");
-        //     }
-        //    });
-        // }).then((result)=>{
-        //     let game = tic_tac_toe.games[game_id];
-        //     assert.equal(game, tic_tac_toe.address, "Error in joining random player");
+        try {
+            await tic_tac_toe.joinGame(game_id,2,{from:accounts[0],value:price});
+        }
+        catch(error){
+            assert.ok("Wrong choice entered- 0:Player vs Random, 1:Player vs Player","Invalid Choice");
+        }
 
-        // });
+        await tic_tac_toe.joinGame(game_id,choice, {from:accounts[0],value: price});
+        
+
+        let address = await tic_tac_toe.games.call(game_id);
+        address = address.playerTwo;
+        assert.equal(tic_tac_toe.address,address,"Invalidly joined random player"); //In game, random player is given the address of the contract
+
+        try{
+            await tic_tac_toe.joinGame(game_id,choice,{from:accounts[1],value:price})
+        }
+        catch(error){
+            assert.ok(error.message);
+        }
     });
 
-    it("should accept exactly two players", () => {
+    it("should accept exactly two players", async () => {
         var tic_tac_toe;
         var price = 200;
         var choice = 1;
         var game_id;
 
-        return TicTacToe.deployed().then((instance) => {
+        return await TicTacToe.deployed().then(async(instance) => {
     	    tic_tac_toe = instance;
     	    
-    	    return tic_tac_toe.newGame();
-        }).then((result) => {
+    	    return await tic_tac_toe.newGame();
+        }).then( async(result) => {
         	eventArgs = getEventArgs(result, GAME_CREATED_EVENT);
         	game_id = eventArgs.gameId;
 
-        	return tic_tac_toe.joinGame(game_id, choice, {from: accounts[0], value: price});
+        	return await tic_tac_toe.joinGame(game_id, choice, {from: accounts[0], value: price});
         }).then((result) => {
         	eventArgs = getEventArgs(result, PLAYER_JOINED_EVENT);
         	assert.isTrue(eventArgs !== false, "Player one did not join the game.");
@@ -199,53 +254,77 @@ contract('TicTacToe', function(accounts) {
     //     });
     // });
 
-    // it("should timeout for making late move", () => {
-    //     var tic_tac_toe;
-    //     var price = 200;
-    //     var choice = 1;
-    //     var game_id;
-    //     return TicTacToe.deployed().then((instance) => {
-    //         tic_tac_toe = instance;
+    it("should timeout for making late move", () => {
+        var tic_tac_toe;
+        var price = 200;
+        var choice = 1;
+        var game_id;
+        return TicTacToe.deployed().then((instance) => {
+            tic_tac_toe = instance;
             
-    //         return tic_tac_toe.newGame();
-    //     }).then((result) => {
-    //         eventArgs = getEventArgs(result, GAME_CREATED_EVENT);
-    //         game_id = eventArgs.gameId;
+            return tic_tac_toe.newGame();
+        }).then((result) => {
+            eventArgs = getEventArgs(result, GAME_CREATED_EVENT);
+            game_id = eventArgs.gameId;
 
-    //         return tic_tac_toe.joinGame(game_id, choice, {from: accounts[0], value: price});
-    //     }).then((result) => {
-    //         return tic_tac_toe.joinGame(game_id, choice, {from: accounts[1], value: price});
-    //     }).then((result) => {
-    //         return tic_tac_toe.makeMove(game_id, 0, 0, {from: accounts[0]});
-    //     }).then((result) => {
-    //         wait(11000);
-    //         return tic_tac_toe.makeMove(game_id, 0, 1, {from: accounts[1]});
-    //     }).then((result) => {
-    //         eventArgs = getEventArgs(result, GAME_TIMED_OUT);
-    //         assert.isTrue(eventArgs !== false, "Game didn't timeout");
-    //     });
-    // });
+            return tic_tac_toe.joinGame(game_id, choice, {from: accounts[0], value: price});
+        }).then((result) => {
+            return tic_tac_toe.joinGame(game_id, choice, {from: accounts[1], value: price});
+        }).then((result) => {
+            return tic_tac_toe.makeMove(game_id, 0, 0, {from: accounts[0]});
+        }).then((result) => {
+            wait(11000);
+            return tic_tac_toe.makeMove(game_id, 0, 1, {from: accounts[1]});
+        }).then((result) => {
+            eventArgs = getEventArgs(result, GAME_TIMED_OUT);
+            assert.isTrue(eventArgs !== false, "Game didn't timeout");
+        });
+    });
+
+
+    it("External player should not make a move",async ()=>{
+        var tic_tac_toe;
+        var price = 200;
+        var choice = 1;
+        var game_id;
+
+        tic_tac_toe = await TicTacToe.new();
+        game_id = await tic_tac_toe.newGame.call({from:accounts[0]});
+        game_id = game_id[0];
+        await tic_tac_toe.newGame({from:accounts[0]});
+        await tic_tac_toe.joinGame(game_id,choice,{from:accounts[1],value:price});
+        await tic_tac_toe.joinGame(game_id,choice,{from:accounts[2],value:price});
+
+        try
+        {
+        await tic_tac_toe.makeMove(game_id,0,0,{from:accounts[3]});
+        }
+        catch(error){
+            assert.include(error.message,"Not your turn");
+        }
+
+    })
 
     it("should not let the same player make two moves in a row", () => {
         var tic_tac_toe;
         var price = 200;
         var choice = 1;
         var game_id;
-        return TicTacToe.deployed().then((instance) => {
+        return TicTacToe.deployed().then(async(instance) => {
     	    tic_tac_toe = instance;
     	    
-    	    return tic_tac_toe.newGame();
-        }).then((result) => {
+    	    return await tic_tac_toe.newGame();
+        }).then(async(result) => {
         	eventArgs = getEventArgs(result, GAME_CREATED_EVENT);
         	game_id = eventArgs.gameId;
 
-        	return tic_tac_toe.joinGame(game_id, choice, {from: accounts[0], value: price});
-        }).then((result) => {
-        	return tic_tac_toe.joinGame(game_id, choice, {from: accounts[1], value: price});
-        }).then((result) => {
-        	return tic_tac_toe.makeMove(game_id, 0, 0, {from: accounts[0]});
-        }).then((result) => {
-        	return tic_tac_toe.makeMove(game_id, 0, 1, {from: accounts[1]});
+        	return await tic_tac_toe.joinGame(game_id, choice, {from: accounts[0], value: price});
+        }).then(async(result) => {
+        	return await tic_tac_toe.joinGame(game_id, choice, {from: accounts[1], value: price});
+        }).then(async(result) => {
+        	return await tic_tac_toe.makeMove(game_id, 0, 0, {from: accounts[0]});
+        }).then(async(result) => {
+        	return await tic_tac_toe.makeMove(game_id, 0, 1, {from: accounts[1]});
         }).then(async(result) => {
             //Catch error if move made in cell previously filled
             try{
