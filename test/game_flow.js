@@ -10,6 +10,8 @@ contract('TicTacToe', function(accounts) {
         var price = 200;
         var choice = 1;
         var game_id;
+        var balance;
+        var diff;
         return TicTacToe.deployed().then((instance) => {
     	    tic_tac_toe = instance;
     	    
@@ -43,6 +45,7 @@ contract('TicTacToe', function(accounts) {
 		}).then((result) => {
 			eventArgs = getEventArgs(result, GAME_DONE_EVENT);
 			assert.isTrue(eventArgs !== false, "Match didn't end");
+			assert.equal(eventArgs.winner, 1, "Match won by wrong winner");
 			//Match below is ends in a draw
 			//Board status
 			//o|x|o
@@ -68,6 +71,7 @@ contract('TicTacToe', function(accounts) {
 		}).then((result) => {
 			eventArgs = getEventArgs(result, GAME_DONE_EVENT);
 			assert.isTrue(eventArgs !== false, "Match didn't end");
+			assert.equal(eventArgs.winner, 3, "Match won by wrong winner");
         	//Match below is won by player2(with o)
 			//Board status
 			//_|o|x
@@ -87,6 +91,7 @@ contract('TicTacToe', function(accounts) {
 		}).then((result) => {
 			eventArgs = getEventArgs(result, GAME_DONE_EVENT);
 			assert.isTrue(eventArgs !== false, "Match didn't end");
+			assert.equal(eventArgs.winner, 2, "Match won by wrong winner");
 			//Match below is won by player2(with x)
 			//Board status
 			//o|o|x
@@ -103,11 +108,21 @@ contract('TicTacToe', function(accounts) {
         	return tic_tac_toe.makeMove(game_id, 0, 2, {from: accounts[1]});
 		}).then((result) => {
         	return tic_tac_toe.makeMove(game_id, 1, 1, {from: accounts[0]});
-		}).then((result) => {
-        	return tic_tac_toe.makeMove(game_id, 2, 2, {from: accounts[1]});
+		}).then(async(result) => {
+			balance = await web3.eth.getBalance(accounts[1]);
+			let receipt = await tic_tac_toe.makeMove(game_id, 2, 2, {from: accounts[1]});
+			let gas = receipt.receipt.gasUsed;
+			let tx = await web3.eth.getTransaction(receipt.tx);
+			let price = tx.gasPrice;
+			diff = gas*price;
+        	return receipt;
 		}).then(async(result) => {
 			eventArgs = getEventArgs(result, GAME_DONE_EVENT);
 			assert.isTrue(eventArgs !== false, "Match didn't end");
+			assert.equal(eventArgs.winner, 2, "Match won by wrong winner");
+			let new_balance = await web3.eth.getBalance(accounts[1]);
+			assert.isAbove(diff, balance-new_balance, "Prize Money not recieved.");
+
 			try{
         		await tic_tac_toe.makeMove(game_id, 2, 0, {from: accounts[0]});
 			}
@@ -122,6 +137,8 @@ contract('TicTacToe', function(accounts) {
         var price = 200;
         var choice = 1;
         var game_id;
+        var balance;
+        var diff;
         return TicTacToe.deployed().then((instance) => {
     	    tic_tac_toe = instance;
     	    
@@ -129,31 +146,32 @@ contract('TicTacToe', function(accounts) {
         }).then((result) => {
         	eventArgs = getEventArgs(result, GAME_CREATED_EVENT);
         	game_id = eventArgs.gameId;
+        	return tic_tac_toe.joinGame(game_id, choice, {from: accounts[2], value: price});
+        }).then((result) => {
+        	return tic_tac_toe.joinGame(game_id, choice, {from: accounts[1], value: price});
+        }).then((result) => {
 			//Match below is won by player1(with x)
 			//Board status
 			//o|o|x
 			//_|x|x
 			//o|_|x
-        	return tic_tac_toe.joinGame(game_id, choice, {from: accounts[0], value: price});
-        }).then((result) => {
-        	return tic_tac_toe.joinGame(game_id, choice, {from: accounts[1], value: price});
-        }).then((result) => {
-        	return tic_tac_toe.makeMove(game_id, 1, 1, {from: accounts[0]});
+        	return tic_tac_toe.makeMove(game_id, 1, 1, {from: accounts[2]});
         }).then((result) => {
         	return tic_tac_toe.makeMove(game_id, 0, 1, {from: accounts[1]});
         }).then((result) => {
-        	return tic_tac_toe.makeMove(game_id, 0, 2, {from: accounts[0]});
+        	return tic_tac_toe.makeMove(game_id, 0, 2, {from: accounts[2]});
 		}).then((result) => {
         	return tic_tac_toe.makeMove(game_id, 2, 0, {from: accounts[1]});
 		}).then((result) => {
-        	return tic_tac_toe.makeMove(game_id, 2, 2, {from: accounts[0]});
+        	return tic_tac_toe.makeMove(game_id, 2, 2, {from: accounts[2]});
 		}).then((result) => {
         	return tic_tac_toe.makeMove(game_id, 0, 0, {from: accounts[1]});
 		}).then((result) => {
-        	return tic_tac_toe.makeMove(game_id, 1, 2, {from: accounts[0]});
+        	return tic_tac_toe.makeMove(game_id, 1, 2, {from: accounts[2]});
 		}).then((result) => {
 			eventArgs = getEventArgs(result, GAME_DONE_EVENT);
 			assert.isTrue(eventArgs !== false, "Match didn't end");
+			assert.equal(eventArgs.winner, 1, "Match won by wrong winner");
 			//Match below ends in a draw
 			//Board status
 			//o|o|x
@@ -161,49 +179,51 @@ contract('TicTacToe', function(accounts) {
 			//o|x|x			
 			return tic_tac_toe.makeMove(game_id, 1, 1, {from : accounts[1]});
 		}).then((result) => {
-        	return tic_tac_toe.makeMove(game_id, 0, 0, {from: accounts[0]});
+        	return tic_tac_toe.makeMove(game_id, 0, 0, {from: accounts[2]});
 		}).then((result) => {
         	return tic_tac_toe.makeMove(game_id, 0, 2, {from: accounts[1]});
 		}).then((result) => {
-        	return tic_tac_toe.makeMove(game_id, 2, 0, {from: accounts[0]});
+        	return tic_tac_toe.makeMove(game_id, 2, 0, {from: accounts[2]});
 		}).then((result) => {
         	return tic_tac_toe.makeMove(game_id, 1, 0, {from: accounts[1]});
 		}).then((result) => {
-        	return tic_tac_toe.makeMove(game_id, 1, 2, {from: accounts[0]});
+        	return tic_tac_toe.makeMove(game_id, 1, 2, {from: accounts[2]});
 		}).then((result) => {
         	return tic_tac_toe.makeMove(game_id, 2, 1, {from: accounts[1]});
 		}).then((result) => {
-        	return tic_tac_toe.makeMove(game_id, 0, 1, {from: accounts[0]});
+        	return tic_tac_toe.makeMove(game_id, 0, 1, {from: accounts[2]});
 		}).then((result) => {
         	return tic_tac_toe.makeMove(game_id, 2, 2, {from: accounts[1]});
 		}).then((result) => {
 			eventArgs = getEventArgs(result, GAME_DONE_EVENT);
 			assert.isTrue(eventArgs !== false, "Match didn't end");
+			assert.equal(eventArgs.winner, 3, "Match won by wrong winner");
 			//Match below ends in a draw
 			//Board status
-			//x|x|o
+			//o|x|o
 			//x|o|x
-			//x|o|o        	
-        	return tic_tac_toe.makeMove(game_id, 1, 0, {from: accounts[0]});
+			//x|o|x        	
+        	return tic_tac_toe.makeMove(game_id, 1, 0, {from: accounts[2]});
 		}).then((result) => {
         	return tic_tac_toe.makeMove(game_id, 1, 1, {from: accounts[1]});
 		}).then((result) => {
-        	return tic_tac_toe.makeMove(game_id, 1, 2, {from: accounts[0]});
+        	return tic_tac_toe.makeMove(game_id, 1, 2, {from: accounts[2]});
 		}).then((result) => {
         	return tic_tac_toe.makeMove(game_id, 2, 1, {from: accounts[1]});
 		}).then((result) => {
-        	return tic_tac_toe.makeMove(game_id, 0, 1, {from: accounts[0]});
+        	return tic_tac_toe.makeMove(game_id, 0, 1, {from: accounts[2]});
 		}).then((result) => {
         	return tic_tac_toe.makeMove(game_id, 0, 2, {from: accounts[1]});
 		}).then((result) => {
-        	return tic_tac_toe.makeMove(game_id, 2, 0, {from: accounts[0]});
+        	return tic_tac_toe.makeMove(game_id, 2, 0, {from: accounts[2]});
 		}).then((result) => {
-        	return tic_tac_toe.makeMove(game_id, 2, 2, {from: accounts[1]});
+        	return tic_tac_toe.makeMove(game_id, 0, 0, {from: accounts[1]});
 		}).then((result) => {
-        	return tic_tac_toe.makeMove(game_id, 0, 0, {from: accounts[0]});
+        	return tic_tac_toe.makeMove(game_id, 2, 2, {from: accounts[2]});
 		}).then((result) => {
 			eventArgs = getEventArgs(result, GAME_DONE_EVENT);
 			assert.isTrue(eventArgs !== false, "Match didn't end");
+			assert.equal(eventArgs.winner, 3, "Match won by wrong winner");
 			//Match below is won by player2(with x)
 			//Board status
 			//x|_|o
@@ -211,22 +231,31 @@ contract('TicTacToe', function(accounts) {
 			//x|o|_
         	return tic_tac_toe.makeMove(game_id, 1, 2, {from: accounts[1]});
 		}).then((result) => {
-        	return tic_tac_toe.makeMove(game_id, 0, 2, {from: accounts[0]});
+        	return tic_tac_toe.makeMove(game_id, 0, 2, {from: accounts[2]});
 		}).then((result) => {
         	return tic_tac_toe.makeMove(game_id, 0, 0, {from: accounts[1]});
 		}).then((result) => {
-        	return tic_tac_toe.makeMove(game_id, 1, 1, {from: accounts[0]});
+        	return tic_tac_toe.makeMove(game_id, 1, 1, {from: accounts[2]});
 		}).then((result) => {
         	return tic_tac_toe.makeMove(game_id, 2, 0, {from: accounts[1]});
 		}).then((result) => {
-        	return tic_tac_toe.makeMove(game_id, 2, 1, {from: accounts[0]});
-		}).then((result) => {
-        	return tic_tac_toe.makeMove(game_id, 1, 0, {from: accounts[1]});
+        	return tic_tac_toe.makeMove(game_id, 2, 1, {from: accounts[2]});
+		}).then(async (result) => {
+			balance = await web3.eth.getBalance(accounts[1]);
+			let receipt = await tic_tac_toe.makeMove(game_id, 1, 0, {from: accounts[1]});
+			let gas = receipt.receipt.gasUsed;
+			let tx = await web3.eth.getTransaction(receipt.tx);
+			let price = tx.gasPrice;
+			diff = gas*price;
+        	return receipt;
 		}).then(async(result) => {
 			eventArgs = getEventArgs(result, GAME_DONE_EVENT);
 			assert.isTrue(eventArgs !== false, "Match didn't end");
+			assert.equal(eventArgs.winner, 2, "Match won by wrong winner");
+			let new_balance = await web3.eth.getBalance(accounts[1]);
+			assert.isAbove(diff-2*price, balance-new_balance, "Wrong winner recieved money");
 			try{
-        		await tic_tac_toe.makeMove(game_id, 2, 0, {from: accounts[0]});
+        		await tic_tac_toe.makeMove(game_id, 2, 0, {from: accounts[2]});
 			}
 			catch(err){
 				assert.include(err.message, "revert");
@@ -239,6 +268,8 @@ contract('TicTacToe', function(accounts) {
         var price = 200;
         var choice = 1;
         var game_id;
+        var balance;
+        var diff;
         return TicTacToe.deployed().then((instance) => {
     	    tic_tac_toe = instance;
     	    
@@ -246,15 +277,15 @@ contract('TicTacToe', function(accounts) {
         }).then((result) => {
         	eventArgs = getEventArgs(result, GAME_CREATED_EVENT);
         	game_id = eventArgs.gameId;
+        	return tic_tac_toe.joinGame(game_id, choice, {from: accounts[0], value: price});
+        }).then((result) => {
+        	return tic_tac_toe.joinGame(game_id, choice, {from: accounts[1], value: price});
+        }).then((result) => {
 			//Match below is won by player1(with x)
 			//Board status
 			//x|o|_
 			//x|x|o
 			//x|_|o
-        	return tic_tac_toe.joinGame(game_id, choice, {from: accounts[0], value: price});
-        }).then((result) => {
-        	return tic_tac_toe.joinGame(game_id, choice, {from: accounts[1], value: price});
-        }).then((result) => {
         	return tic_tac_toe.makeMove(game_id, 1, 1, {from: accounts[0]});
         }).then((result) => {
         	return tic_tac_toe.makeMove(game_id, 0, 1, {from: accounts[1]});
@@ -271,6 +302,7 @@ contract('TicTacToe', function(accounts) {
 		}).then((result) => {
 			eventArgs = getEventArgs(result, GAME_DONE_EVENT);
 			assert.isTrue(eventArgs !== false, "Match didn't end");
+			assert.equal(eventArgs.winner, 1, "Match won by wrong winner");
 			//Match below ends with a draw
 			//Board status
 			//o|x|o
@@ -296,6 +328,7 @@ contract('TicTacToe', function(accounts) {
 		}).then((result) => {
 			eventArgs = getEventArgs(result, GAME_DONE_EVENT);
 			assert.isTrue(eventArgs !== false, "Match didn't end");
+			assert.equal(eventArgs.winner, 3, "Match won by wrong winner");
 			//Match below is won by player1(with x)
 			//Board status
 			//x|o|x
@@ -317,6 +350,7 @@ contract('TicTacToe', function(accounts) {
 		}).then((result) => {
 			eventArgs = getEventArgs(result, GAME_DONE_EVENT);
 			assert.isTrue(eventArgs !== false, "Match didn't end");
+			assert.equal(eventArgs.winner, 1, "Match won by wrong winner");
 			//Match below is won by player2(with x)
 			//Board status
 			//x|o|x
@@ -331,13 +365,22 @@ contract('TicTacToe', function(accounts) {
         	return tic_tac_toe.makeMove(game_id, 0, 1, {from: accounts[0]});
 		}).then((result) => {
         	return tic_tac_toe.makeMove(game_id, 0, 2, {from: accounts[1]});
+		}).then(async(result) => {
+			balance = await web3.eth.getBalance(accounts[0]);
+			let receipt = await tic_tac_toe.makeMove(game_id, 2, 1, {from: accounts[0]});
+			let gas = receipt.receipt.gasUsed;
+			let tx = await web3.eth.getTransaction(receipt.tx);
+			let price = tx.gasPrice;
+			diff = gas*price;
+        	return receipt;
 		}).then((result) => {
-        	return tic_tac_toe.makeMove(game_id, 2, 1, {from: accounts[0]});
-		}).then((result) => {
-        	return tic_tac_toe.makeMove(game_id, 1, 2, {from: accounts[1]});
+			return tic_tac_toe.makeMove(game_id, 1, 2, {from: accounts[1]});
 		}).then(async(result) => {
 			eventArgs = getEventArgs(result, GAME_DONE_EVENT);
 			assert.isTrue(eventArgs !== false, "Match didn't end");
+			assert.equal(eventArgs.winner, 2, "Match won by wrong winner");
+			let new_balance = await web3.eth.getBalance(accounts[0]);
+			assert.isAbove(diff, balance-new_balance, "Prize money not recieved by player1");
 			try{
         		await tic_tac_toe.makeMove(game_id, 2, 0, {from: accounts[0]});
 			}
